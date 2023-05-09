@@ -16,7 +16,7 @@
 #'     {see function \code{\link{PrInDT}} for details.}\cr
 #'     If no restrictions exist, the default = NA is used.
 #' @param N Number of repetitions (integer > 0)
-#' @param conf.level (1 - significance level) in function \code{ctree} (numerical between 0 and 1)\cr
+#' @param conf.level (1 - significance level) in function \code{ctree} (numerical, > 0 and <= 1)\cr
 #'     (default = 0.95)
 #'
 #' @return 
@@ -59,7 +59,7 @@
 PrInDTMulev <- function(datain,classname,ctestv=NA,N,conf.level=0.95){
   ## input check
   if (typeof(datain) != "list" || typeof(classname) != "character" || !(typeof(ctestv) %in% c("logical", "character")) || N <= 0 ||
-      !(0 <= conf.level & conf.level <= 1)){
+      !(0 < conf.level & conf.level <= 1)){
     stop("irregular input")
   }
   data <- datain

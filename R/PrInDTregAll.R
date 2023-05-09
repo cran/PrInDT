@@ -12,7 +12,7 @@
 #' @param ctestv Vector of character strings of forbidden split results;\cr
 #'     {see function \code{\link{PrInDT}} for details.}\cr
 #'     If no restrictions exist, the default = NA is used.
-#' @param conf.level (1 - significance level) in function \code{ctree} (numerical between 0 and 1);\cr
+#' @param conf.level (1 - significance level) in function \code{ctree} (numerical, > 0 and <= 1);\cr
 #'     default = 0.95
 #'
 #' @return
@@ -45,7 +45,7 @@
 PrInDTregAll <- function(datain,regname,ctestv=NA,conf.level=0.95){
   ## input check
   if (typeof(datain) != "list" || typeof(regname) != "character" || !(typeof(ctestv) %in% c("logical", "character")) ||
-      !(0 <= conf.level & conf.level <= 1)){
+      !(0 < conf.level & conf.level <= 1)){
     stop("irregular input")
   }
 ####

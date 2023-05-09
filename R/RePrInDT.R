@@ -23,11 +23,11 @@
 #'     {see function \code{\link{PrInDT}} for details.}\cr
 #'     If no restrictions exist, the default = NA is used.
 #' @param N Number of repetitions (integer > 0)
-#' @param plarge Vector of undersampling percentages of larger class (numerical, between 0 and 1)
-#' @param psmall Vector of undersampling percentages of smaller class (numerical, between 0 and 1)
-#' @param conf.level (1 - significance level) in function \code{ctree} (numerical between 0 and 1);\cr
+#' @param plarge Vector of undersampling percentages of larger class (numerical, > 0 and <= 1)
+#' @param psmall Vector of undersampling percentages of smaller class (numerical, > 0 and <= 1)
+#' @param conf.level (1 - significance level) in function \code{ctree} (numerical, > 0 and <= 1);\cr
 #'     default = 0.95
-#' @param thres Probability threshold for prediction of smaller class; default = 0.5
+#' @param thres Probability threshold for prediction of smaller class (numerical, >= 0 and < 1); default = 0.5
 #' @param stratvers Version of stratification;\cr
 #'     = 0: none (default),\cr
 #'     = 1: stratification according to the percentages of the values of the factor variable 'strat',\cr
@@ -72,8 +72,8 @@
 RePrInDT <- function(datain,classname,ctestv=NA,N,plarge,psmall,conf.level=0.95,thres=0.5,stratvers=0,strat=NA,seedl=TRUE){
   ## input check
   if (typeof(datain) != "list" || typeof(classname) != "character" || !(typeof(ctestv) %in% c("logical", "character")) || N <= 0 ||
-      !(all(0 <= plarge & plarge <= 1)) || !(all(0 <= psmall & psmall <= 1)) ||
-      !(0 <= conf.level & conf.level <= 1) | !(0 <= thres & thres <= 1) |
+      !(all(0 < plarge & plarge <= 1)) || !(all(0 < psmall & psmall <= 1)) ||
+      !(0 < conf.level & conf.level <= 1) | !(0 <= thres & thres < 1) |
       !(0 <= stratvers) || !(typeof(strat) %in% c("logical", "character")) || typeof(seedl) != "logical"){
     stop("irregular input")
   }
@@ -96,10 +96,12 @@ RePrInDT <- function(datain,classname,ctestv=NA,N,plarge,psmall,conf.level=0.95,
   for (i in 1:length(plarge)) {
     for (j in 1:length(psmall)) {
       k <- k + 1
+#      if (k > 1){
+#        remove(out,data_imp,ctpreds_imp,conf_imp)
+#        gc(full=TRUE,reset=TRUE)
+#        gc(full=TRUE,reset=TRUE)
+#      }
       message("\n")
-#      message("\n")
-#      message("sampling percentage for larger class: ",plarge[i],"\n")
-#      message("sampling percentage for smaller class:",psmall[j],"\n")
       message("sampling percentage for larger class: ",plarge[i])
       message("sampling percentage for smaller class:",psmall[j])
       ## call of PrInDT
@@ -117,7 +119,7 @@ RePrInDT <- function(datain,classname,ctestv=NA,N,plarge,psmall,conf.level=0.95,
         treesb <- c(treesb,out$tree1st)
       }
       
-      if (out$ba1st[3] > 0){
+#      if (out$ba1st[3] > 0){
         for (l in 2:dim(data)[2]){
           data_imp <- out$dataout
           data_imp[,l] <- data_per[,l]
@@ -131,16 +133,17 @@ RePrInDT <- function(datain,classname,ctestv=NA,N,plarge,psmall,conf.level=0.95,
           conf_imp <- table(ctpreds_imp, data_imp$class)
           simp[i,j,l] <- simp[i,j,l] + out$ba3rd[3] - (conf_imp[1,1] / n_class1 + conf_imp[2,2] / n_class2)/2
         }
-      }
+#      }
     }
   }
+ 
 ## preparation of print
   dimnames(acc1st) <- list(1:length(plarge),1:length(psmall),c("plarge","psmall",paste0("full ",levels(out$dataout$class)[1]),
                                                                paste0("full ",levels(out$dataout$class)[2]),"full balanced",
                                                                paste0("test ",levels(out$dataout$class)[1]),paste0("test ",levels(out$dataout$class)[2]),"test balanced"))
   dimnames(acc3en) <- list(1:length(plarge),1:length(psmall),c("plarge","psmall",paste0("full ",levels(out$dataout$class)[1]),
                                                                paste0("full ",levels(out$dataout$class)[2]),"full balanced","mean test balanced")) # !!!
-  simp_m <- sapply(2:7,function(x) mean(simp[,,x]))
+  simp_m <- sapply(2:dim(data)[2],function(x) mean(simp[,,x]))
   names(simp_m) <- colnames(out$dataout)[-(colnames(out$dataout) == "class")]
 ###
   result <- list(treesb=treesb,acc1st=acc1st,acc3en=acc3en,simp_m=simp_m)

@@ -18,11 +18,11 @@ If no restrictions exist, the default = NA is used.}
 
 \item{N}{Number of repetitions (integer > 0)}
 
-\item{pobs}{Vector of resampling percentages of observations (numerical, between 0 and 1)}
+\item{pobs}{Vector of resampling percentages of observations (numerical, > 0 and <= 1)}
 
-\item{ppre}{Vector of resampling percentages of predictor variables (numerical, between 0 and 1)}
+\item{ppre}{Vector of resampling percentages of predictor variables (numerical, > 0 and <= 1)}
 
-\item{conf.level}{(1 - significance level) in function \code{ctree} (numerical between 0 and 1);\cr
+\item{conf.level}{(1 - significance level) in function \code{ctree} (numerical, > 0 and <= 1);\cr
 default = 0.95}
 }
 \value{

@@ -16,7 +16,7 @@ influential variables, which need to be factors or numericals (transform logical
 {see function \code{\link{PrInDT}} for details.}\cr
 If no restrictions exist, the default = NA is used.}
 
-\item{conf.level}{(1 - significance level) in function \code{ctree} (numerical between 0 and 1)\cr
+\item{conf.level}{(1 - significance level) in function \code{ctree} (numerical, > 0 and <= 1)\cr
 (default = 0.95)}
 }
 \value{

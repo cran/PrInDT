@@ -23,12 +23,12 @@
 #'     A concrete example is: 'ctestv <- rbind('ETH == \{C2a, C1a\}','AGE <= 20')' for variables 'ETH' and 'AGE' and values 'C2a','C1a', and '20';\cr
 #'     If no restrictions exist, the default = NA is used.
 #' @param N Number (> 2) of repetitions (integer)
-#' @param percl Undersampling percentage of larger class (numerical, between 0 and 1)
-#' @param percs Undersampling percentage of smaller class (numerical, between 0 and 1);\cr
+#' @param percl Undersampling percentage of larger class (numerical, > 0 and <= 1)
+#' @param percs Undersampling percentage of smaller class (numerical, > 0 and <= 1);\cr
 #'     default = 1
-#' @param conf.level (1 - significance level) in function \code{ctree} (numerical between 0 and 1);\cr
+#' @param conf.level (1 - significance level) in function \code{ctree} (numerical, > 0 and <= 1);\cr
 #'     default = 0.95
-#' @param thres Probability threshold for prediction of smaller class; default = 0.5
+#' @param thres Probability threshold for prediction of smaller class (numerical, >= 0 and < 1); default = 0.5
 #' @param stratvers Version of stratification;\cr
 #'     = 0: none (default),\cr
 #'     = 1: stratification according to the percentages of the values of the factor variable 'strat',\cr
@@ -110,7 +110,7 @@
 PrInDT <- function(datain,classname,ctestv=NA,N,percl,percs=1,conf.level=0.95,thres=0.5,stratvers=0,strat=NA,seedl=TRUE){
   ## input check
   if (typeof(datain) != "list" || typeof(classname) != "character" || !(typeof(ctestv) %in% c("logical", "character")) || N <= 0 ||
-      !(0 <= percl & percl <= 1) || !(0 <= percs & percs <= 1) || !(0 <= conf.level & conf.level <= 1) || !(0 <= thres & thres <= 1) ||
+      !(0 < percl & percl <= 1) || !(0 < percs & percs <= 1) || !(0 < conf.level & conf.level <= 1) || !(0 <= thres & thres < 1) ||
       !(0 <= stratvers) || !(typeof(strat) %in% c("logical", "character")) || typeof(seedl) != "logical"){
     stop("irregular input")
   }
@@ -138,6 +138,9 @@ PrInDT <- function(datain,classname,ctestv=NA,N,percl,percs=1,conf.level=0.95,th
     order_class <- order(as.numeric(data$class),decreasing=TRUE) # re-ordered line numbers
   } else {
     order_class <- order(as.numeric(data$class))
+  }
+  if (percl*n_class1 < 3 || percs*n_class2 < 3){
+      stop("Number of tokens in one of the class levels too low (< 3)")
   }
   data <- data[order_class,] # data now reordered: smaller class first
   ######
@@ -424,6 +427,7 @@ PrInDT <- function(datain,classname,ctestv=NA,N,percl,percs=1,conf.level=0.95,th
                  ba2nd = ba2nd, tree3rd = trees[[three[3]]], treet3rd = trees[[threet[3]]], ba3rd = ba3rd, baen = baen, bafull= crit2, batest=crit3, 
                  dataout = data, treeAll=treeAll, baAll=baAll, interpAll=crit1All, confAll = confAll)
   class(result) <- c("PrInDT", "PrInDTAll")
+#  gc(full=TRUE)
   result
 }
 ####

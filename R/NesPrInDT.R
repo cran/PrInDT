@@ -26,10 +26,10 @@
 #'     {see function \code{\link{PrInDT}} for details.}\cr
 #'     If no restrictions exist, the default = NA is used.
 #' @param N Number of repetitions (integer > 0)
-#' @param plarge Undersampling percentage of larger class (numerical, between 0 and 1)
-#' @param psmall Undersampling percentage of smaller class (numerical, between 0 and 1);\cr
+#' @param plarge Undersampling percentage of larger class (numerical, > 0 and <= 1)
+#' @param psmall Undersampling percentage of smaller class (numerical, > 0 and <= 1);\cr
 #'     default = 1
-#' @param conf.level (1 - significance level) in function \code{ctree} (numerical between 0 and 1);\cr
+#' @param conf.level (1 - significance level) in function \code{ctree} (numerical, > 0 and <= 1);\cr
 #'     default = 0.95
 #' @param thres Probability threshold for prediction of smaller class; default = 0.5
 #' @param stratvers Version of stratification;\cr
@@ -87,7 +87,7 @@
 NesPrInDT <- function(datain,classname,ctestv=NA,N,plarge,psmall=1.0,conf.level=0.95,thres=0.5,stratvers=0,strat=NA,seedl=TRUE,nesvar,nesunder,repin){
   ## input check
   if (typeof(datain) != "list" || typeof(classname) != "character" || !(typeof(ctestv) %in% c("logical", "character")) || N <= 0 ||
-      !(0 <= plarge & plarge <= 1) || !(0 <= psmall & psmall <= 1) || !(0 <= conf.level & conf.level <= 1) || !(0 <= thres & thres <= 1) ||
+      !(0 < plarge & plarge <= 1) || !(0 < psmall & psmall <= 1) || !(0 < conf.level & conf.level <= 1) || !(0 <= thres & thres <= 1) ||
       !(0 <= stratvers) || !(typeof(strat) %in% c("logical", "character")) || typeof(seedl) != "logical" || typeof(nesvar) != "character" || 
       typeof(nesunder) != "integer" || typeof(repin) != "double"){
     stop("irregular input")

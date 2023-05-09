@@ -13,8 +13,8 @@
 #' @param ctestv Vector of character strings of forbidden split results;\cr
 #'     {see function \code{\link{PrInDT}} for details.}\cr
 #'     If no restrictions exist, the default = NA is used.
-#' @param conf.level (1 - significance level) in function \code{ctree} (numerical between 0 and 1); default = 0.95
-#' @param thres Probability threshold for prediction of smaller class; default = 0.5
+#' @param conf.level (1 - significance level) in function \code{ctree} (numerical, > 0 and <= 1); default = 0.95
+#' @param thres Probability threshold for prediction of smaller class (numerical, >= 0 and < 1); default = 0.5
 #'
 #' @return
 #' \describe{
@@ -46,7 +46,7 @@
 PrInDTAll <- function(datain,classname,ctestv=NA,conf.level=0.95,thres=0.5){
   ## input check
   if ( typeof(datain) != "list" || typeof(classname) != "character" || !(typeof(ctestv) %in% c("logical", "character"))
-      || !(0 <= conf.level & conf.level <= 1) || !(0 <= thres & thres <= 1) ){
+      || !(0 < conf.level & conf.level <= 1) || !(0 <= thres & thres < 1) ){
     stop("irregular input")
   }
   ##

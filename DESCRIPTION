@@ -2,7 +2,7 @@ Package: PrInDT
 Type: Package
 Title: Prediction and Interpretation in Decision Trees for
         Classification and Regression
-Version: 1.0
+Version: 1.0.1
 Authors@R: c(person("Claus", "Weihs", email = "claus.weihs@tu-dortmund.de",  role = c("aut", "cre")),
              person("Sarah", "Buschfeld", email="sarah.buschfeld@tu-dortmund.de", role="aut"),
              person("Niklas", "Nitsch", email="niklas.nitsch@tu-dortmund.de", role="ctb"))
@@ -36,9 +36,9 @@ Depends: R (>= 2.10)
 NeedsCompilation: no
 Maintainer: Claus Weihs <claus.weihs@tu-dortmund.de>
 LazyData: true
-Packaged: 2023-04-11 16:31:31 UTC; weihs
+Packaged: 2023-05-09 09:51:23 UTC; weihs
 Author: Claus Weihs [aut, cre],
   Sarah Buschfeld [aut],
   Niklas Nitsch [ctb]
 Repository: CRAN
-Date/Publication: 2023-04-12 12:20:09 UTC
+Date/Publication: 2023-05-09 22:20:02 UTC

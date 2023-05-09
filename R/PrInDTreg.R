@@ -17,9 +17,9 @@
 #'     {see function \code{\link{PrInDT}} for details.}\cr
 #'     If no restrictions exist, the default = NA is used.
 #' @param N Number of repetitions (integer > 0)
-#' @param pobs Vector of resampling percentages of observations (numerical, between 0 and 1)
-#' @param ppre Vector of resampling percentages of predictor variables (numerical, between 0 and 1)
-#' @param conf.level (1 - significance level) in function \code{ctree} (numerical between 0 and 1);\cr
+#' @param pobs Vector of resampling percentages of observations (numerical, > 0 and <= 1)
+#' @param ppre Vector of resampling percentages of predictor variables (numerical, > 0 and <= 1)
+#' @param conf.level (1 - significance level) in function \code{ctree} (numerical, > 0 and <= 1);\cr
 #'     default = 0.95
 #'
 #' @return 
@@ -74,7 +74,7 @@
 PrInDTreg <- function(datain,regname,ctestv=NA,N,pobs,ppre,conf.level=0.95){
   ## input check
   if (typeof(datain) != "list" || typeof(regname) != "character" || !(typeof(ctestv) %in% c("logical", "character")) || N <= 0 ||
-      !all(0 <= pobs & pobs <= 1) || !all(0 <= ppre & ppre <= 1) || !(0 <= conf.level & conf.level <= 1)){
+      !all(0 < pobs & pobs <= 1) || !all(0 < ppre & ppre <= 1) || !(0 < conf.level & conf.level <= 1)){
     stop("irregular input")
   }
 ####
@@ -86,6 +86,12 @@ PrInDTreg <- function(datain,regname,ctestv=NA,N,pobs,ppre,conf.level=0.95){
   interp2max <- FALSE
   meanint <- 0
   set.seed(1234567)
+  if (any(pobs*dim(data)[1] < 10)){
+      stop("For one of the percentages: Number of tokens too small (< 10)")
+  }
+  if (any(ppre*dim(data)[2] < 1)){
+      stop("For one of the percentages: Number of predictors too small (< 1)")
+  }
   message("combinations of percentages of","\n","observations & predictors")
   for (i in 1:length(pobs)) {
     perc <- pobs[i]

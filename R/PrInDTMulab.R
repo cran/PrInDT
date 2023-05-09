@@ -20,10 +20,10 @@
 #' @param ctestv Vector of character strings of forbidden split results;\cr
 #'     {see function \code{\link{PrInDT}} for details.}\cr
 #'     If no restrictions exist, the default = NA is used.
-#' @param conf.level (1 - significance level) in function \code{ctree} (numerical between 0 and 1);\cr
+#' @param conf.level (1 - significance level) in function \code{ctree} (numerical, > 0 and <= 1);\cr
 #' default = 0.95
-#' @param percl list of undersampling percentages of larger class (numerical between 0 and 1): one per dependent class variable
-#' @param percs list of undersampling percentage of smaller class (numerical between 0 and 1); one per dependent class variable
+#' @param percl list of undersampling percentages of larger class (numerical, > 0 and <= 1): one per dependent class variable
+#' @param percs list of undersampling percentage of smaller class (numerical, > 0 and <= 1); one per dependent class variable
 #' @param N no. of repetitions (integer > 0)
 #' @param indind indices of independent variables
 #' @param indaddind indices of additional independent variables used in the case of dependent binary relevance modeling
@@ -90,7 +90,7 @@
 PrInDTMulab <- function(datain,classnames,ctestv,conf.level=0.95,percl,percs=1,N,indind,indaddind,inddep){
   ## input check
   if (typeof(datain) != "list" || typeof(classnames) != "character" || !(typeof(ctestv) %in% c("logical", "character")) || N <= 0 ||
-      !all(0 <= percl & percl <= 1) || !all(0 <= percs & percs <= 1) || !(0 <= conf.level & conf.level <= 1) || 
+      !all(0 < percl & percl <= 1) || !all(0 < percs & percs <= 1) || !(0 < conf.level & conf.level <= 1) || 
       !(typeof(indind) %in% c("integer", "double")) || 
       !(typeof(indaddind) %in% c("integer", "double")) || !(typeof(inddep) %in% c("integer", "double")) ){
     stop("irregular input")

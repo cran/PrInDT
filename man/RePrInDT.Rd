@@ -19,14 +19,14 @@ If no restrictions exist, the default = NA is used.}
 
 \item{N}{Number of repetitions (integer > 0)}
 
-\item{plarge}{Vector of undersampling percentages of larger class (numerical, between 0 and 1)}
+\item{plarge}{Vector of undersampling percentages of larger class (numerical, > 0 and <= 1)}
 
-\item{psmall}{Vector of undersampling percentages of smaller class (numerical, between 0 and 1)}
+\item{psmall}{Vector of undersampling percentages of smaller class (numerical, > 0 and <= 1)}
 
-\item{conf.level}{(1 - significance level) in function \code{ctree} (numerical between 0 and 1);\cr
+\item{conf.level}{(1 - significance level) in function \code{ctree} (numerical, > 0 and <= 1);\cr
 default = 0.95}
 
-\item{thres}{Probability threshold for prediction of smaller class; default = 0.5}
+\item{thres}{Probability threshold for prediction of smaller class (numerical, >= 0 and < 1); default = 0.5}
 
 \item{stratvers}{Version of stratification;\cr
 = 0: none (default),\cr

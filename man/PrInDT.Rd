@@ -23,15 +23,15 @@ If no restrictions exist, the default = NA is used.}
 
 \item{N}{Number (> 2) of repetitions (integer)}
 
-\item{percl}{Undersampling percentage of larger class (numerical, between 0 and 1)}
+\item{percl}{Undersampling percentage of larger class (numerical, > 0 and <= 1)}
 
-\item{percs}{Undersampling percentage of smaller class (numerical, between 0 and 1);\cr
+\item{percs}{Undersampling percentage of smaller class (numerical, > 0 and <= 1);\cr
 default = 1}
 
-\item{conf.level}{(1 - significance level) in function \code{ctree} (numerical between 0 and 1);\cr
+\item{conf.level}{(1 - significance level) in function \code{ctree} (numerical, > 0 and <= 1);\cr
 default = 0.95}
 
-\item{thres}{Probability threshold for prediction of smaller class; default = 0.5}
+\item{thres}{Probability threshold for prediction of smaller class (numerical, >= 0 and < 1); default = 0.5}
 
 \item{stratvers}{Version of stratification;\cr
 = 0: none (default),\cr

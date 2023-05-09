@@ -28,11 +28,13 @@ FindSubstr <- function(ct,ctestv){
     stop("irregular input")
   }
   ##
+  J <- length(ctestv)
   ctvec <- utils::capture.output(print(ct))
-  testc <- array(rep("FALSE",2500),c(50,50))
-  for(j in 1:length(ctestv)){             # loop over strings to be tested
+  K <- length(ctvec)
+  testc <- array(rep("FALSE",J*K),c(J,K))
+  for(j in 1:J){             # loop over strings to be tested
      nj <- nchar(ctestv[j])
-     for(k in 1:length(ctvec)){     # loop over parts of tree description
+     for(k in 1:K){     # loop over parts of tree description
          nc <- nchar(ctvec[k]) - nj     # nc = length of part of tree - length of tested string
          if (nc >= 0) {
            if (grepl( "<=",ctestv[j],fixed=TRUE ) == FALSE){

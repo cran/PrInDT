@@ -18,7 +18,7 @@
 #' @param ctestv Vector of character strings of forbidden split results;\cr
 #'     {see function \code{\link{PrInDT}} for details.}\cr
 #'     If no restrictions exist, the default = NA is used.
-#' @param conf.level (1 - significance level) in function \code{ctree} (numerical between 0 and 1);\cr
+#' @param conf.level (1 - significance level) in function \code{ctree} (numerical, > 0 and <= 1);\cr
 #'   default = 0.95
 #' @param indind indices of independent variables
 #' @param indaddind indices of additional predictors used in the case of dependent binary relevance modeling
@@ -79,7 +79,7 @@
 PrInDTMulabAll <- function(datain,classnames,ctestv=NA,conf.level=0.95,indind,indaddind,inddep){
   ## input check
   if ( typeof(datain) != "list" || typeof(classnames) != "character" || !(typeof(ctestv) %in% c("logical", "character")) || 
-      !(0 <= conf.level & conf.level <= 1) || !(typeof(indind) %in% c("integer", "double")) || 
+      !(0 < conf.level & conf.level <= 1) || !(typeof(indind) %in% c("integer", "double")) || 
       !(typeof(indaddind) %in% c("integer", "double")) || !(typeof(inddep) %in% c("integer", "double")) ){
     stop("irregular input")
   }
@@ -145,7 +145,7 @@ PrInDTMulabAll <- function(datain,classnames,ctestv=NA,conf.level=0.95,indind,in
     x <- colnames(datain)[inddep[i]]
 #   message("\n")
     message(paste0("  ",x))
-    out <- PrInDTAll(data[,c(indind,inddep[i])],x,ctestv,conf.level) # minimum call
+    out <- PrInDTAll(data,x,ctestv,conf.level) # minimum call
     rownames(accadbr)[i] <- x
     if (i == 1) {
       treeadbr <- list(out$treeAll)
