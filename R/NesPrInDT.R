@@ -12,18 +12,20 @@
 #' The probability threshold 'thres' for the prediction of the smaller class may be specified (default = 0.5).\cr
 #' Undersampling may be stratified in two ways by the feature 'strat'.\cr
 #' The results are evaluated on the full sample and on the subsamples of 'nesunder'.
+#' The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr
 #'
 #' \strong{Reference} \cr Weihs, C., Buschfeld, S. 2021b. NesPrInDT: Nested undersampling in PrInDT. 
 #'	arXiv:2103.14931
 #'
-#' @usage NesPrInDT(datain, classname, ctestv=NA, N, plarge, psmall=1.0, conf.level=0.95,
-#'        thres=0.5, stratvers=0, strat=NA, seedl=TRUE, nesvar, nesunder, repin)
+#' @usage NesPrInDT(datain,classname,ctestv=NA,N,plarge,psmall=1.0,conf.level=0.95,
+#'        thres=0.5,stratvers=0,strat=NA,seedl=TRUE,nesvar,nesunder,repin,
+#'        minsplit=NA,minbucket=NA)
 #'
 #' @param datain Input data frame with class factor variable 'classname' and the\cr
 #'    influential variables, which need to be factors or numericals (transform logicals and character variables to factors) 
 #' @param classname Name of class variable (character)
 #' @param ctestv Vector of character strings of forbidden split results;\cr
-#'     {see function \code{\link{PrInDT}} for details.}\cr
+#'     (see function \code{\link{PrInDT}} for details.)\cr
 #'     If no restrictions exist, the default = NA is used.
 #' @param N Number of repetitions (integer > 0)
 #' @param plarge Undersampling percentage of larger class (numerical, > 0 and <= 1)
@@ -43,6 +45,10 @@
 #' @param nesvar Name of factor to be undersampled (character)
 #' @param nesunder Data of factor to be undersampled (integer)
 #' @param repin Number of repetitions (integer) for undersampling of 'nesvar'
+#' @param minsplit Minimum number of elements in a node to be splitted;\cr
+#'     default = 20
+#' @param minbucket Minimum number of elements in a node;\cr
+#'     default = 7
 #'
 #' @return
 #' \describe{  
@@ -61,8 +67,6 @@
 #' The plot function will produce a series of more than one plot. If you use R, you might want to specify \code{windows(record=TRUE)} before 
 #' \code{plot(name)} to save the whole series of plots. In R-Studio this functionality is provided automatically.
 #'
-#' @exportS3Method print NesPrInDT
-#' @exportS3Method plot NesPrInDT
 #' @export NesPrInDT
 #' @import MASS
 #' @import party
@@ -84,13 +88,25 @@
 #' plot(outNes)
 #' hist(outNes$undba,main=" ",xlab = "balanced accuracies of 3 best trees of all undersamples")
 #'
-NesPrInDT <- function(datain,classname,ctestv=NA,N,plarge,psmall=1.0,conf.level=0.95,thres=0.5,stratvers=0,strat=NA,seedl=TRUE,nesvar,nesunder,repin){
+NesPrInDT <- function(datain,classname,ctestv=NA,N,plarge=NA,psmall=1.0,conf.level=0.95,thres=0.5,stratvers=0,strat=NA,seedl=TRUE,nesvar,nesunder,repin,
+                                     minsplit=NA,minbucket=NA){
   ## input check
   if (typeof(datain) != "list" || typeof(classname) != "character" || !(typeof(ctestv) %in% c("logical", "character")) || N <= 0 ||
-      !(0 < plarge & plarge <= 1) || !(0 < psmall & psmall <= 1) || !(0 < conf.level & conf.level <= 1) || !(0 <= thres & thres <= 1) ||
+      !((0 < plarge & plarge <= 1) | typeof(plarge)=="logical") || !(0 < psmall & psmall <= 1) || !(0 < conf.level & conf.level <= 1) || !(0 <= thres & thres <= 1) ||
       !(0 <= stratvers) || !(typeof(strat) %in% c("logical", "character")) || typeof(seedl) != "logical" || typeof(nesvar) != "character" || 
-      typeof(nesunder) != "integer" || typeof(repin) != "double"){
+      typeof(nesunder) != "integer" || typeof(repin) != "double" || !(typeof(minsplit) %in% c("logical","double")) || 
+      !(typeof(minbucket) %in% c("logical", "double"))  ) {
     stop("irregular input")
+  }
+  if ((is.na(minsplit) == TRUE) & (is.na(minbucket) == TRUE)){
+    minsplit <- 20
+    minbucket <- 7
+  }
+  if (!(is.na(minsplit) == TRUE) & (is.na(minbucket) == TRUE)){
+    minbucket <- minsplit / 3
+  }
+  if ((is.na(minsplit) == TRUE) & !(is.na(minbucket) == TRUE)){
+    minsplit <- minbucket * 3
   }
   ##
   if (seedl == TRUE){
@@ -101,6 +117,9 @@ NesPrInDT <- function(datain,classname,ctestv=NA,N,plarge,psmall=1.0,conf.level=
   names(data)[names(data)==classname] <- "class"
   n_class1 <- table(data$class)[1] # no. of elements of class 1
   n_class2 <- table(data$class)[2] # no. of elements of class 2
+  if (min(n_class1,n_class2) == 0){
+   stop("irregular input: only 1 class")
+  }
   if (n_class1 < n_class2){
     # relevel of classes if smaller class first
     data$class <- stats::relevel(data$class, levels(data$class)[2]) # larger class now first
@@ -136,7 +155,7 @@ NesPrInDT <- function(datain,classname,ctestv=NA,N,plarge,psmall=1.0,conf.level=
     y <- rbind(data[as.integer(nesunder) == 2,],x) # data is reordered: class2 first (with indund resampling)
     y <- as.data.frame(y)
     ## call of PrInDT (without re-setting seed for random numbers)
-    outde <- PrInDT(y,classname,ctestv,N,percl=plarge,percs=psmall,conf.level,seedl=FALSE)
+    outde <- PrInDT(y,classname,ctestv,N,percl=plarge,percs=psmall,conf.level,seedl=FALSE,minsplit=minsplit,minbucket=minbucket)
     ##
     undba[j,] <- c(outde$ba1st[3],outde$ba2nd[3],outde$ba3rd[3])
     undba3en[j] <- outde$baen[2,3]
@@ -186,8 +205,7 @@ NesPrInDT <- function(datain,classname,ctestv=NA,N,plarge,psmall=1.0,conf.level=
   class(result) <- "NesPrInDT"
   result
 }
-
-## print function
+#' @export
 print.NesPrInDT <- function(x, ...){
 cat("\n","Evaluation of nested PrInDT","\n\n","************************","\n")
   ## balanced accuracies on undersamples of nesunder
@@ -205,9 +223,9 @@ cat("\n","Evaluation of nested PrInDT","\n\n","************************","\n")
   cat("\n","***************************","\n")
   cat(" results for the full sample","\n","***************************","\n")
   cat("balanced accuracy of best undersampled tree on full sample","\n")
-  cat(unname(x$accF[x$imax[1]]))
-  cat("\n","table of balanced accuracies (with no. of occurences) of 3 best trees of all undersamples on full sample","\n")
-  print(table(unname(x$accF)))
+  cat(unname(x$accF[round(x$imax[1],digits=6)]))
+  cat("\n","table of balanced accuracies (with no. of occurences) of 3 best trees of all replications on full sample")
+  print(table(unname(round(x$accF,digits=6))))
   cat("\n","Best trees on full sample","\n")
   for (k in 1:length(x$maxt)){
     print(x$treesb[[x$maxt[k]]])
@@ -223,8 +241,7 @@ cat("\n","Evaluation of nested PrInDT","\n\n","************************","\n")
   cat("best balanced accuracy on undersample of ensemble of best 3 trees from undersampling","\n")
   cat(unname(max(x$undba3en)),"\n")
 }
-
-## plot function
+#' @export
 plot.NesPrInDT <- function(x, ...){
 ## Best trees on undersamples
 if (length(x$imax) > 1){

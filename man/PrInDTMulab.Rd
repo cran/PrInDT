@@ -4,17 +4,17 @@
 \alias{PrInDTMulab}
 \title{Multiple label classification based on resampling by \code{\link{PrInDT}}}
 \usage{
-PrInDTMulab(datain, classnames, ctestv, conf.level=0.95, percl, percs=1,
-       N, indind, indaddind, inddep)
+PrInDTMulab(datain,classnames=NA,ctestv=NA,conf.level=0.95,percl,percs=1,N,
+               indind=NA,indaddind=NA,inddep,minsplit=NA,minbucket=NA)
 }
 \arguments{
 \item{datain}{Input data frame with class factor variable 'classname' and the\cr
 influential variables, which need to be factors or numericals (transform logicals and character variables to factors)}
 
-\item{classnames}{names of class variables (character vector)}
+\item{classnames}{names of class variables (character vector); default = NA: from old version: superfluous now}
 
 \item{ctestv}{Vector of character strings of forbidden split results;\cr
-{see function \code{\link{PrInDT}} for details.}\cr
+(see function \code{\link{PrInDT}} for details.)\cr
 If no restrictions exist, the default = NA is used.}
 
 \item{conf.level}{(1 - significance level) in function \code{ctree} (numerical, > 0 and <= 1);\cr
@@ -31,6 +31,12 @@ default = 0.95}
 \item{indaddind}{indices of additional independent variables used in the case of dependent binary relevance modeling}
 
 \item{inddep}{indices of dependent variables}
+
+\item{minsplit}{Minimum number of elements in a node to be splitted;\cr
+default = 20}
+
+\item{minbucket}{Minimum number of elements in a node;\cr
+default = 7}
 }
 \value{
 \describe{
@@ -61,12 +67,15 @@ Multiple label classification based on resampling by \code{\link{PrInDT}}. We co
 dependent binary modeling) and three ways of model evaluation: single assessment, joint assessment, and true prediction  
 (see the Value section for more information).\cr
 Variables should be arranged in 'datain' according to indices specified in 'indind', 'indaddind', and 'inddep'.\cr
+Please note that the dependent variables have to be specified as dummies, i.e. as 'absent' (value 0) or 'present' (value 1).\cr
 Undersampling is repeated 'N' times.\cr
 Undersampling percentages 'percl' for the larger class and 'percs' for the smaller class can be 
 specified, one each per dependent class variable.\cr
+The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr
 
-\strong{Reference}\cr Probst, P., Au, Q., Casalicchio, G., Stachl, C., and Bischl, B. 2017. Multilabel Classification with 
-R Package mlr. arXiv:1703.08991v2
+\strong{References}\cr 
+- Buschfeld, S., Weihs, C. and Ronan, P.. 2024. Modeling linguistic landscapes: A comparison of St Martin’s two capitals Philipsburg and Marigot Linguistic Landscape 10(3): 302–334. https://doi.org/10.1075/ll.23070.bus\cr
+- Probst, P., Au, Q., Casalicchio, G., Stachl, C., and Bischl, B. 2017. Multilabel Classification with R Package mlr. arXiv:1703.08991v2
 }
 \details{
 Standard output can be produced by means of \code{print(name)} or just \code{ name } as well as \code{plot(name)}  where 'name' is the output data 
@@ -90,8 +99,8 @@ perc2 <- c(0.75,0.95,0.75)  # percentages of observations of smaller class,
 ##
 # Call PrInDT: language by language
 ##
-outmult <- PrInDTMulab(dataclean,colnames(dataclean)[inddep],ctestv=NA,conf.level=0.95,
-                  percl=perc,percs=perc2,N,indind,indaddind,inddep)
+outmult <- PrInDTMulab(dataclean,ctestv=NA,conf.level=0.95,percl=perc,percs=perc2,N=N,
+                  indind=indind,indaddind=indaddind,inddep=inddep)
 print(outmult)
 plot(outmult)
 

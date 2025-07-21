@@ -5,24 +5,30 @@
 #' assessment, joint assessment, and true prediction (see the Value section for more information).\cr
 #' Interpretability is checked (see ctestv).\cr
 #' Variables should be arranged in 'datain' according to indices specified in 'indind', 'indaddind', and 'inddep'.\cr
+#' Please note that the dependent variables have to be specified as dummies, i.e. as 'absent' (value 0) or 'present' (value 1).\cr
+#' The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr
 #'
 #' \strong{Reference}\cr Probst, P., Au, Q., Casalicchio, G., Stachl, C., and Bischl, B. 2017. Multilabel Classification with 
 #' R Package mlr. arXiv:1703.08991v2
 #'
-#' @usage PrInDTMulabAll(datain, classnames, ctestv=NA, conf.level=0.95, indind, indaddind,
-#'        inddep)
+#' @usage PrInDTMulabAll(datain,classnames=NA,ctestv=NA,conf.level=0.95,indind=NA,
+#'                indaddind=NA,inddep,minsplit=NA,minbucket=NA)
 #' 
 #' @param datain Input data frame with class factor variable 'classname' and the\cr
 #'    influential variables, which need to be factors or numericals (transform logicals and character variables to factors) 
 #' @param classnames names of class variables (character vector)
 #' @param ctestv Vector of character strings of forbidden split results;\cr
-#'     {see function \code{\link{PrInDT}} for details.}\cr
+#'     (see function \code{\link{PrInDT}} for details.)\cr
 #'     If no restrictions exist, the default = NA is used.
 #' @param conf.level (1 - significance level) in function \code{ctree} (numerical, > 0 and <= 1);\cr
 #'   default = 0.95
 #' @param indind indices of independent variables
 #' @param indaddind indices of additional predictors used in the case of dependent binary relevance modeling
 #' @param inddep indices of dependent variables
+#' @param minsplit Minimum number of elements in a node to be splitted;\cr
+#'     default = 20
+#' @param minbucket Minimum number of elements in a node;\cr
+#'     default = 7
 #'
 #' @return
 #' \describe{ 
@@ -54,8 +60,6 @@
 #' \code{plot(name)} to save the whole series of plots. In R-Studio this functionality is provided automatically.
 #'
 #' @export PrInDTMulabAll
-#' @exportS3Method print PrInDTMulabAll
-#' @exportS3Method plot PrInDTMulabAll
 #'
 #' @examples
 #' data <- PrInDT::data_land # load data
@@ -76,18 +80,39 @@
 #' @import party
 #' @import stats
 #'
-PrInDTMulabAll <- function(datain,classnames,ctestv=NA,conf.level=0.95,indind,indaddind,inddep){
+PrInDTMulabAll <- function(datain,classnames=NA,ctestv=NA,conf.level=0.95,indind=NA,indaddind=NA,inddep,minsplit=NA,minbucket=NA){
   ## input check
-  if ( typeof(datain) != "list" || typeof(classnames) != "character" || !(typeof(ctestv) %in% c("logical", "character")) || 
-      !(0 < conf.level & conf.level <= 1) || !(typeof(indind) %in% c("integer", "double")) || 
-      !(typeof(indaddind) %in% c("integer", "double")) || !(typeof(inddep) %in% c("integer", "double")) ){
+  if ( typeof(datain) != "list" || !(typeof(classnames) %in% c("character","logical"))  || !(typeof(ctestv) %in% c("logical", "character")) || 
+      !(0 < conf.level & conf.level <= 1) || !(typeof(indind) %in% c("integer", "double","logical")) || 
+      !(typeof(indaddind) %in% c("integer", "double","logical")) || !(typeof(inddep) %in% c("integer", "double")) || !(typeof(minsplit) %in% c("logical","double")) || 
+      !(typeof(minbucket) %in% c("logical", "double"))  ) {
     stop("irregular input")
+  }
+  if ((is.na(minsplit) == TRUE) & (is.na(minbucket) == TRUE)){
+    minsplit <- 20
+    minbucket <- 7
+  }
+  if (!(is.na(minsplit) == TRUE) & (is.na(minbucket) == TRUE)){
+    minbucket <- minsplit / 3
+  }
+  if ((is.na(minsplit) == TRUE) & !(is.na(minbucket) == TRUE)){
+    minsplit <- minbucket * 3
   }
 ####
 ####
 ## Modeling with no additional independent and no dependent variable as predictors
 ####
   data <- datain
+  if (all(is.na(classnames)) == TRUE){
+    classnames <- colnames(data)[inddep]
+  }
+  if (all(is.na(indind)) == TRUE & all(is.na(indaddind)) == TRUE){
+    indind <- c(1:dim(data)[2])[-inddep]
+  }  
+  if (all(is.na(indind)) == TRUE & all(is.na(indaddind)) != TRUE){
+    indind <- c(1:dim(data)[2])[-c(inddep,indaddind)]
+  }  
+ print(indind)
 #  message("\n")
   message("*** Binary relevance ***")
 #  message("\n")
@@ -105,7 +130,7 @@ PrInDTMulabAll <- function(datain,classnames,ctestv=NA,conf.level=0.95,indind,in
     data[,x] <- droplevels(data[,x])
 #    message("\n")
     message(paste0("  ",colnames(datain)[inddep[i]]))
-    out <- PrInDTAll(data[,c(indind,inddep[i])],x,ctestv,conf.level) # minimum call
+    out <- PrInDTAll(data[,c(indind,inddep[i])],x,ctestv,conf.level,minsplit=minsplit,minbucket=minbucket)
     rownames(accabr)[i] <- x
     if (i == 1) {
       treeabr <- list(out$treeAll)
@@ -145,7 +170,7 @@ PrInDTMulabAll <- function(datain,classnames,ctestv=NA,conf.level=0.95,indind,in
     x <- colnames(datain)[inddep[i]]
 #   message("\n")
     message(paste0("  ",x))
-    out <- PrInDTAll(data,x,ctestv,conf.level) # minimum call
+    out <- PrInDTAll(data,x,ctestv,conf.level,minsplit=minsplit,minbucket=minbucket)
     rownames(accadbr)[i] <- x
     if (i == 1) {
       treeadbr <- list(out$treeAll)
@@ -154,10 +179,14 @@ PrInDTMulabAll <- function(datain,classnames,ctestv=NA,conf.level=0.95,indind,in
     }
     accadbr[i] <- out$baAll
     ctpreds[,i] <- stats::predict( treeadbr[[i]],newdata=data )
+#print(ctpreds[1:20,i])
+#print(as.integer(data[1:20,inddep[i]]))
+#print(table(data[,inddep[i]]))
     unequal[,i] <- as.integer(data[,inddep[i]]) != ctpreds[,i]
     if (table(data[,inddep[i]])[1] < table(data[,inddep[i]])[2] ){
       unequal[,i] <- as.integer(data[,inddep[i]]) == ctpreds[,i]
     }
+#print(sum(unequal[,i]))
     hsum <- hsum + sum(unequal[,i])
   }
 #  message("\n")
@@ -178,6 +207,8 @@ PrInDTMulabAll <- function(datain,classnames,ctestv=NA,conf.level=0.95,indind,in
   datain2 <- data
   ctpreds2 <- matrix(0,ncol=length(inddep),nrow=dim(data)[1])
   unequal2 <- matrix(TRUE,ncol=length(inddep),nrow=dim(data)[1])
+  accabrt <- matrix(0,nrow=length(inddep),ncol=1)
+  rownames(accabrt) <- classnames
   hsum2 <- 0
   for (i in 1:length(inddep)){
     #  p <- ctpreds[,i] - 1
@@ -187,12 +218,34 @@ PrInDTMulabAll <- function(datain,classnames,ctestv=NA,conf.level=0.95,indind,in
     }
   }
   for (i in 1:length(inddep)){
+#    rownames(accabrt)[i] <- colnames(data)[inddep[i]] ### ????
     ctpreds2[,i] <- stats::predict(treeadbr[[i]],newdata=datain2)
-    if (table(data[,inddep[i]])[1] >= table(data[,inddep[i]])[2] ){
-      unequal2[,i] <- as.integer(data[,inddep[i]]) != ctpreds2[,i]
+    tabdbrt <- table(data[,inddep[i]],ctpreds2[,i])
+#print(tabdbrt)
+    if (length(colnames(tabdbrt)) == 2){
+      if (table(data[,inddep[i]])[1] >= table(data[,inddep[i]])[2] ){
+        unequal2[,i] <- as.integer(data[,inddep[i]]) != ctpreds2[,i]
+        accabrt[i] <- ( tabdbrt[1,1] / sum(tabdbrt[1,]) + tabdbrt[2,2] / sum(tabdbrt[2,]) ) / 2
+      } else {
+        unequal2[,i] <- as.integer(data[,inddep[i]]) == ctpreds2[,i]
+        accabrt[i] <- (tabdbrt[1,2] / sum(tabdbrt[1,]) + tabdbrt[2,1] / sum(tabdbrt[2,]) ) / 2
+      }
     } else {
-      unequal2[,i] <- as.integer(data[,inddep[i]]) == ctpreds2[,i]
-    }
+    if (table(data[,inddep[i]])[1] >= table(data[,inddep[i]])[2] ){
+        unequal2[,i] <- as.integer(data[,inddep[i]]) != ctpreds2[,i]
+        accabrt[i] <- 0.5  ## tabdbrt[2,1] / sum(tabdbrt[,1])    ##  ???
+      } else {
+        unequal2[,i] <- as.integer(data[,inddep[i]]) == ctpreds2[,i]
+        accabrt[i] <- 0.5  ## tabdbrt[1,1] / sum(tabdbrt[,1])    ## ???
+      }
+    } 
+#    if (table(data[,inddep[i]])[1] >= table(data[,inddep[i]])[2] ){
+#      unequal2[,i] <- as.integer(data[,inddep[i]]) != ctpreds2[,i]
+#      accabrt[i] <- ( tabdbrt[1,1] / sum(tabdbrt[1,]) + tabdbrt[2,2] / sum(tabdbrt[2,]) ) / 2
+#    } else {
+#      unequal2[,i] <- as.integer(data[,inddep[i]]) == ctpreds2[,i]
+#      accabrt[i] <- (tabdbrt[1,2] / sum(tabdbrt[1,]) + tabdbrt[2,1] / sum(tabdbrt[2,]) ) / 2
+#    }
     hsum2 <- hsum2 + sum(unequal2[,i])
   }
   erratrue <- c(0,0)
@@ -205,12 +258,11 @@ PrInDTMulabAll <- function(datain,classnames,ctestv=NA,conf.level=0.95,indind,in
   erratrue[2] <- hsum2 / (3*dim(data)[1])
   names(erratrue) <- c("01-accuracy", "hamming-accuracy")
   result <- list(accabr = accabr, errabin = errabin, accadbr = accadbr, erraext = erraext, erratrue = erratrue, 
-     coldata = colnames(datain), inddep = inddep, treeabr = treeabr, treeadbr = treeadbr)
+     coldata = colnames(datain), inddep = inddep, treeabr = treeabr, treeadbr = treeadbr,accabrt=accabrt)
   class(result) <- "PrInDTMulabAll"
   result
 }
-
-## print
+#' @export
 print.PrInDTMulabAll <- function(x,...){
   cat("\n","Multi-label classification on full sample","\n")
   cat("\n")
@@ -253,13 +305,15 @@ print.PrInDTMulabAll <- function(x,...){
   ##
   cat("\n\n")
   cat("*** Dependent binary relevance: True prediction ***")
+  colnames(x$accabrt) <- "balanced"
+  cat("\n\n")
+  cat("Single assessment: all","\n")
+  print(x$accabrt)
   cat("\n")
-  cat("\n","Assessment of PrInDT models (true prediction)","\n")
+  cat("\n","Joint assessment all","\n")
   print(1-x$erratrue)
 }
-
-
-## plot
+#' @export
 plot.PrInDTMulabAll <- function(x,...){
 L <- length(x$inddep)
   for (i in 1:L){

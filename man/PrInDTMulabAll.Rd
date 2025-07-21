@@ -4,8 +4,8 @@
 \alias{PrInDTMulabAll}
 \title{Multiple label classification based on all observations}
 \usage{
-PrInDTMulabAll(datain, classnames, ctestv=NA, conf.level=0.95, indind, indaddind,
-       inddep)
+PrInDTMulabAll(datain,classnames=NA,ctestv=NA,conf.level=0.95,indind=NA,
+               indaddind=NA,inddep,minsplit=NA,minbucket=NA)
 }
 \arguments{
 \item{datain}{Input data frame with class factor variable 'classname' and the\cr
@@ -14,7 +14,7 @@ influential variables, which need to be factors or numericals (transform logical
 \item{classnames}{names of class variables (character vector)}
 
 \item{ctestv}{Vector of character strings of forbidden split results;\cr
-{see function \code{\link{PrInDT}} for details.}\cr
+(see function \code{\link{PrInDT}} for details.)\cr
 If no restrictions exist, the default = NA is used.}
 
 \item{conf.level}{(1 - significance level) in function \code{ctree} (numerical, > 0 and <= 1);\cr
@@ -25,6 +25,12 @@ default = 0.95}
 \item{indaddind}{indices of additional predictors used in the case of dependent binary relevance modeling}
 
 \item{inddep}{indices of dependent variables}
+
+\item{minsplit}{Minimum number of elements in a node to be splitted;\cr
+default = 20}
+
+\item{minbucket}{Minimum number of elements in a node;\cr
+default = 7}
 }
 \value{
 \describe{ 
@@ -55,6 +61,8 @@ dependent binary modeling) and three ways of model evaluation: single
 assessment, joint assessment, and true prediction (see the Value section for more information).\cr
 Interpretability is checked (see ctestv).\cr
 Variables should be arranged in 'datain' according to indices specified in 'indind', 'indaddind', and 'inddep'.\cr
+Please note that the dependent variables have to be specified as dummies, i.e. as 'absent' (value 0) or 'present' (value 1).\cr
+The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr
 
 \strong{Reference}\cr Probst, P., Au, Q., Casalicchio, G., Stachl, C., and Bischl, B. 2017. Multilabel Classification with 
 R Package mlr. arXiv:1703.08991v2

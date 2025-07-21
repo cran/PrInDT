@@ -22,6 +22,8 @@
 #'
 #' @importFrom utils capture.output
 #'
+#' @noRd
+#'
 FindSubstr <- function(ct,ctestv){
   ## input check
   if (typeof(ct) != "S4" || typeof(ctestv) != "character"){

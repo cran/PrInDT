@@ -1,17 +1,22 @@
 #' Conditional inference tree (ctree) for multiple classes on all observations
 #'
 #' @description ctree for more than 2 classes on all observations. Interpretability is checked (see 'ctestv').
+#' The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr
 #'
-#' @usage PrInDTMulevAll(datain, classname, ctestv=NA, conf.level=0.95)
+#' @usage PrInDTMulevAll(datain,classname,ctestv=NA,conf.level=0.95,minsplit=NA,minbucket=NA)
 #'
 #' @param datain Input data frame with class factor variable 'classname' and the\cr
 #'    influential variables, which need to be factors or numericals (transform logicals and character variables to factors) 
 #' @param classname Name of class variable (character)
 #' @param ctestv Vector of character strings of forbidden split results;\cr
-#'     {see function \code{\link{PrInDT}} for details.}\cr
+#'     (see function \code{\link{PrInDT}} for details.)\cr
 #'     If no restrictions exist, the default = NA is used.
 #' @param conf.level (1 - significance level) in function \code{ctree} (numerical, > 0 and <= 1)\cr
 #'     (default = 0.95)
+#' @param minsplit Minimum number of elements in a node to be splitted;\cr
+#'     default = 20
+#' @param minbucket Minimum number of elements in a node;\cr
+#'     default = 7
 #'
 #' @return 
 #' \describe{
@@ -25,8 +30,6 @@
 #' Standard output can be produced by means of \code{print(name)} or just \code{ name } as well as \code{plot(name)} where 'name' is the output data 
 #' frame of the function.
 #'
-#' @exportS3Method print PrInDTMulevAll
-#' @exportS3Method plot PrInDTMulevAll
 #' @export PrInDTMulevAll
 #'
 #' @examples
@@ -46,11 +49,22 @@
 #' @importFrom stats relevel predict
 #' @importFrom party ctree ctree_control
 #'
-PrInDTMulevAll <- function(datain,classname,ctestv=NA,conf.level=0.95){
+PrInDTMulevAll <- function(datain,classname,ctestv=NA,conf.level=0.95,minsplit=NA,minbucket=NA){
   ## input check
   if (typeof(datain) != "list" || typeof(classname) != "character" || !(typeof(ctestv) %in% c("logical", "character")) || 
-      !(0 < conf.level & conf.level <= 1)){
+      !(0 < conf.level & conf.level <= 1) || !(typeof(minsplit) %in% c("logical","double")) || 
+      !(typeof(minbucket) %in% c("logical", "double"))  ) {
     stop("irregular input")
+  }
+  if ((is.na(minsplit) == TRUE) & (is.na(minbucket) == TRUE)){
+    minsplit <- 20
+    minbucket <- 7
+  }
+  if (!(is.na(minsplit) == TRUE) & (is.na(minbucket) == TRUE)){
+    minbucket <- minsplit / 3
+  }
+  if ((is.na(minsplit) == TRUE) & !(is.na(minbucket) == TRUE)){
+    minsplit <- minbucket * 3
   }
   data <- datain
   names(data)[names(data)==classname] <- "class"
@@ -58,7 +72,7 @@ PrInDTMulevAll <- function(datain,classname,ctestv=NA,conf.level=0.95){
   ######
   ## model with all observations
   ######
-  ct <- party::ctree(class ~ ., data = data, control = party::ctree_control(mincriterion=conf.level))
+  ct <- party::ctree(class ~ ., data = data, control = party::ctree_control(mincriterion=conf.level,minsplit=minsplit,minbucket=minbucket))
   crit1 <- FALSE
   if (is.na(ctestv[1]) == FALSE) {
     crit1 <- FindSubstr(ct,ctestv) # call of the above function for overall tree
@@ -75,10 +89,7 @@ PrInDTMulevAll <- function(datain,classname,ctestv=NA,conf.level=0.95){
   class(result) <- "PrInDTMulevAll"
   result
 }
-
-####
-## print function
-####
+#' @export
 print.PrInDTMulevAll <- function(x, ...){
   # output for model on all observations
   cat("******************************","\n")
@@ -99,10 +110,12 @@ print.PrInDTMulevAll <- function(x, ...){
   cat("***********************************************","\n")
   cat("             ",unname(!(x$interpAll)),"\n")
 }
-
-####
-## plot function
-####
+#' @export
 plot.PrInDTMulevAll <- function(x, ...){
   plot(x$treeAll,main="Multi-class problem: Tree on full sample") # plot of tree
 }
+#' @export
+predict.PrInDTMulevAll <- function(object,...){
+  predict(object$ct,...)
+}
+

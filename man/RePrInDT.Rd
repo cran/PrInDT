@@ -5,7 +5,8 @@
 \title{Repeated \code{\link{PrInDT}} for specified percentage combinations}
 \usage{
 RePrInDT(datain, classname, ctestv=NA, N, plarge, psmall, conf.level=0.95,
-       thres=0.5, stratvers=0, strat=NA, seedl=TRUE)
+       thres=0.5, stratvers=0, strat=NA, seedl=TRUE,minsplit=NA,minbucket=NA,
+       valdat=datain)
 }
 \arguments{
 \item{datain}{Input data frame with class factor variable 'classname' and the\cr
@@ -14,7 +15,7 @@ influential variables, which need to be factors or numericals (transform logical
 \item{classname}{Name of class variable (character)}
 
 \item{ctestv}{Vector of character strings of forbidden split results;\cr
-{see function \code{\link{PrInDT}} for details.}\cr
+(see function \code{\link{PrInDT}} for details.)\cr
 If no restrictions exist, the default = NA is used.}
 
 \item{N}{Number of repetitions (integer > 0)}
@@ -38,6 +39,14 @@ default = NA (no stratification)}
 
 \item{seedl}{Should the seed for random numbers be set (TRUE / FALSE)?\cr
 default = TRUE}
+
+\item{minsplit}{Minimum number of elements in a node to be splitted;\cr
+default = 20}
+
+\item{minbucket}{Minimum number of elements in a node;\cr
+default = 7}
+
+\item{valdat}{Validation data; default = datain}
 }
 \value{
 \describe{
@@ -48,14 +57,16 @@ default = TRUE}
 }
 }
 \description{
-\code{\link{PrInDT}} is called repeatedly according to the percentages specified in the vectors 'plarge' and 
+The function \code{\link{PrInDT}} is called repeatedly according to all combinations of the percentages specified in the vectors 'plarge' and 
 'psmall'.\cr
 The relationship between the two-class factor variable 'classname' and all other factor and numerical variables
 in the data frame 'datain' is optimally modeled by means of 'N' repetitions of undersampling.\cr 
+The optimization citerion is the balanced accuracy on the validation sample 'valdat' (default = full input sample 'datain').\cr
 The trees generated from undersampling can be restricted by rejecting 
 unacceptable trees which include split results specified in the character strings of the vector 'ctestv'.\cr
 The probability threshold 'thres' for the prediction of the smaller class may be specified (default = 0.5).\cr
-Undersampling may be stratified in two ways by the feature 'strat'.
+Undersampling may be stratified in two ways by the feature 'strat'.\cr
+The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr
 
 \strong{Reference}\cr Weihs, C., Buschfeld, S. 2021c. Repeated undersampling in PrInDT (RePrInDT): Variation in undersampling and prediction, 
 and ranking of predictors in ensembles. arXiv:2108.05129
@@ -75,7 +86,7 @@ N <- 51  # no. of repetitions
 conf.level <- 0.99 # 1 - significance level (mincriterion) in ctree
 psmall <- c(0.95,1)     # percentages of the small class
 plarge <- c(0.09,0.1)  # percentages of the large class
-outRe <- RePrInDT(data,"real",ctestv,N,plarge,psmall,conf.level) # might take 5 minutes
+outRe <- RePrInDT(data,"real",ctestv,N,plarge,psmall,conf.level) 
 outRe
 plot(outRe)
 

@@ -4,7 +4,8 @@
 \alias{PrInDTAll}
 \title{Conditional inference tree (ctree) based on all observations}
 \usage{
-PrInDTAll(datain, classname, ctestv=NA, conf.level=0.95, thres=0.5)
+PrInDTAll(datain, classname, ctestv=NA, conf.level=0.95, thres=0.5,
+                 minsplit=NA,minbucket=NA,repvar=NA,indrep=0,thr=0.5)
 }
 \arguments{
 \item{datain}{Input data frame with class factor variable 'classname' and the\cr
@@ -13,12 +14,24 @@ influential variables, which need to be factors or numericals (transform logical
 \item{classname}{Name of class variable (character)}
 
 \item{ctestv}{Vector of character strings of forbidden split results;\cr
-{see function \code{\link{PrInDT}} for details.}\cr
+(see function \code{\link{PrInDT}} for details.)\cr
 If no restrictions exist, the default = NA is used.}
 
 \item{conf.level}{(1 - significance level) in function \code{ctree} (numerical, > 0 and <= 1); default = 0.95}
 
 \item{thres}{Probability threshold for prediction of smaller class (numerical, >= 0 and < 1); default = 0.5}
+
+\item{minsplit}{Minimum number of elements in a node to be splitted;\cr
+default = 20}
+
+\item{minbucket}{Minimum number of elements in a node;\cr
+default = 7}
+
+\item{repvar}{Values of variable defining the substructure in the case of repeated measurements; default=NA}
+
+\item{indrep}{Indicator of repeated measurements ('indrep=1'); default = 0}
+
+\item{thr}{threshold for element classification: minimum percentage of correct class entries; default = 0.5}
 }
 \value{
 \describe{
@@ -26,13 +39,27 @@ If no restrictions exist, the default = NA is used.}
 \item{baAll}{balanced accuracy of 'treeall'}
 \item{interpAll}{criterion of interpretability of 'treeall' (TRUE / FALSE)}
 \item{confAll}{confusion matrix of 'treeall'}
+\item{acc1AE}{Accuracy of full sample tree on Elements of large class} 
+\item{acc2AE}{Accuracy of full sample tree on Elements of small class}  
+\item{bamaxAE}{balanced accuracy of full sample tree on Elements} 
+\item{namA1}{Names of misclassified Elements by full sample tree of large class}
+\item{namA2}{Names of misclassified Elements by full sample tree of small class}
+\item{lablarge}{Label of large class} 
+\item{labsmall}{Label of small class}
+\item{thr}{Threshold for repeated measurements} 
 }
 }
 \description{
-ctree based on all observations. Interpretability is checked (see 'ctestv'); probability threshold can be specified.
+ctree based on all observations in 'datain'. Interpretability is checked (see 'ctestv'); probability threshold can be specified.
+The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.
 
-\strong{Reference}: Weihs, C., Buschfeld, S. 2021a. Combining Prediction and Interpretation in  Decision Trees (PrInDT) - 
+\strong{Reference} \cr
+Weihs, C., Buschfeld, S. 2021a. Combining Prediction and Interpretation in  Decision Trees (PrInDT) - 
 a Linguistic Example. arXiv:2103.02336
+
+In the case of repeated measurements ('indrep=1'), the values of the substructure variable have to be given in 'repvar'.
+Only one value of 'classname' is allowed for each value of 'repvar'.
+If for a value of 'repvar' the percentage 'thr' of the observed occurence of a value of 'classname' is not reached by the number of predictions of the value of 'classname', a misclassification is detected.
 }
 \details{
 Standard output can be produced by means of \code{print(name)} or just \code{ name } as well as \code{plot(name)} where 'name' is the output data 

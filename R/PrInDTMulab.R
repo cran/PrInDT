@@ -4,21 +4,24 @@
 #' dependent binary modeling) and three ways of model evaluation: single assessment, joint assessment, and true prediction  
 #' (see the Value section for more information).\cr
 #' Variables should be arranged in 'datain' according to indices specified in 'indind', 'indaddind', and 'inddep'.\cr
+#' Please note that the dependent variables have to be specified as dummies, i.e. as 'absent' (value 0) or 'present' (value 1).\cr
 #' Undersampling is repeated 'N' times.\cr
 #' Undersampling percentages 'percl' for the larger class and 'percs' for the smaller class can be 
 #' specified, one each per dependent class variable.\cr
+#' The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr
 #'
-#' \strong{Reference}\cr Probst, P., Au, Q., Casalicchio, G., Stachl, C., and Bischl, B. 2017. Multilabel Classification with 
-#' R Package mlr. arXiv:1703.08991v2
+#' \strong{References}\cr 
+#' - Buschfeld, S., Weihs, C. and Ronan, P.. 2024. Modeling linguistic landscapes: A comparison of St Martin’s two capitals Philipsburg and Marigot Linguistic Landscape 10(3): 302–334. https://doi.org/10.1075/ll.23070.bus\cr
+#' - Probst, P., Au, Q., Casalicchio, G., Stachl, C., and Bischl, B. 2017. Multilabel Classification with R Package mlr. arXiv:1703.08991v2
 #'
-#' @usage PrInDTMulab(datain, classnames, ctestv, conf.level=0.95, percl, percs=1,
-#'        N, indind, indaddind, inddep)
+#' @usage PrInDTMulab(datain,classnames=NA,ctestv=NA,conf.level=0.95,percl,percs=1,N,
+#'                indind=NA,indaddind=NA,inddep,minsplit=NA,minbucket=NA)
 #'
 #' @param datain Input data frame with class factor variable 'classname' and the\cr
 #'    influential variables, which need to be factors or numericals (transform logicals and character variables to factors) 
-#' @param classnames names of class variables (character vector)
+#' @param classnames names of class variables (character vector); default = NA: from old version: superfluous now
 #' @param ctestv Vector of character strings of forbidden split results;\cr
-#'     {see function \code{\link{PrInDT}} for details.}\cr
+#'     (see function \code{\link{PrInDT}} for details.)\cr
 #'     If no restrictions exist, the default = NA is used.
 #' @param conf.level (1 - significance level) in function \code{ctree} (numerical, > 0 and <= 1);\cr
 #' default = 0.95
@@ -28,6 +31,10 @@
 #' @param indind indices of independent variables
 #' @param indaddind indices of additional independent variables used in the case of dependent binary relevance modeling
 #' @param inddep indices of dependent variables
+#' @param minsplit Minimum number of elements in a node to be splitted;\cr
+#'     default = 20
+#' @param minbucket Minimum number of elements in a node;\cr
+#'     default = 7
 #'
 #' @return
 #' \describe{
@@ -60,8 +67,6 @@
 #' \code{plot(name)} to save the whole series of plots. In R-Studio this functionality is provided automatically.
 #'
 #' @export PrInDTMulab
-#' @exportS3Method print PrInDTMulab
-#' @exportS3Method plot PrInDTMulab
 #'
 #' @examples
 #' data <- PrInDT::data_land # load data
@@ -79,26 +84,45 @@
 #' ##
 #' # Call PrInDT: language by language
 #' ##
-#' outmult <- PrInDTMulab(dataclean,colnames(dataclean)[inddep],ctestv=NA,conf.level=0.95,
-#'                   percl=perc,percs=perc2,N,indind,indaddind,inddep)
+#' outmult <- PrInDTMulab(dataclean,ctestv=NA,conf.level=0.95,percl=perc,percs=perc2,N=N,
+#'                   indind=indind,indaddind=indaddind,inddep=inddep)
 #' print(outmult)
 #' plot(outmult)
 #'
 #' @import party
 #' @import stats
 #'
-PrInDTMulab <- function(datain,classnames,ctestv,conf.level=0.95,percl,percs=1,N,indind,indaddind,inddep){
+PrInDTMulab <- function(datain,classnames=NA,ctestv=NA,conf.level=0.95,percl,percs=1,N,indind=NA,indaddind=NA,inddep,minsplit=NA,minbucket=NA){
   ## input check
-  if (typeof(datain) != "list" || typeof(classnames) != "character" || !(typeof(ctestv) %in% c("logical", "character")) || N <= 0 ||
+  if (typeof(datain) != "list" || !(typeof(classnames) %in% c("logical", "character")) || !(typeof(ctestv) %in% c("logical", "character")) || N <= 0 ||
       !all(0 < percl & percl <= 1) || !all(0 < percs & percs <= 1) || !(0 < conf.level & conf.level <= 1) || 
-      !(typeof(indind) %in% c("integer", "double")) || 
-      !(typeof(indaddind) %in% c("integer", "double")) || !(typeof(inddep) %in% c("integer", "double")) ){
+      !(typeof(indind) %in% c("integer", "double","logical")) || 
+      !(typeof(indaddind) %in% c("integer", "double","logical")) || !(typeof(inddep) %in% c("integer", "double")) || !(typeof(minsplit) %in% c("logical","double")) || 
+      !(typeof(minbucket) %in% c("logical", "double"))  ) {
     stop("irregular input")
+  }
+  if ((is.na(minsplit) == TRUE) & (is.na(minbucket) == TRUE)){
+    minsplit <- 20
+    minbucket <- 7
+  }
+  if (!(is.na(minsplit) == TRUE) & (is.na(minbucket) == TRUE)){
+    minbucket <- minsplit / 3
+  }
+  if ((is.na(minsplit) == TRUE) & !(is.na(minbucket) == TRUE)){
+    minsplit <- minbucket * 3
   }
 ####
 ## Modeling with no additional independent and no dependent variable as predictors
 ####
   data <- datain
+  classnames <- colnames(data)[inddep]
+  if (all(is.na(indind)) == TRUE & all(is.na(indaddind)) == TRUE){
+    indind <- c(1:dim(data)[2])[-inddep]
+  }  
+  if (all(is.na(indind)) == TRUE & all(is.na(indaddind)) != TRUE){
+    indind <- c(1:dim(data)[2])[-c(inddep,indaddind)]
+  }  
+#  print(indind)
 #  message("\n\n")
   message("*** Binary relevance ***")
 #  message("\n")
@@ -119,7 +143,7 @@ PrInDTMulab <- function(datain,classnames,ctestv,conf.level=0.95,percl,percs=1,N
     perc <- percl[i]  # undersampling percentage of the larger class
     perc2 <- percs[i] # undersampling percentage of the smaller class
     ## call of PrInDT
-    out <- PrInDT(data[,c(indind,inddep[i])],x,ctestv,N,perc,perc2,conf.level)
+    out <- PrInDT(data[,c(indind,inddep[i])],x,ctestv,N,perc,perc2,conf.level,minsplit=minsplit,minbucket=minbucket)
     rownames(accbr)[i] <- colnames(datain)[inddep[i]]
     if (i == 1) {
       treebr <- list(out$tree1st)
@@ -167,7 +191,7 @@ PrInDTMulab <- function(datain,classnames,ctestv,conf.level=0.95,percl,percs=1,N
     perc <- percl[i]  # undersampling percentage of the larger class
     perc2 <- percs[i] # undersampling percentage of the smaller class
     ## call of PrInDT
-    out <- PrInDT(data,x,ctestv,N,perc,perc2,conf.level)
+    out <- PrInDT(data,x,ctestv,N,perc,perc2,conf.level,minsplit=minsplit,minbucket=minbucket)
     rownames(accdbr)[i] <- x
     if (i == 1) {
       treedbr <- list(out$tree1st)
@@ -201,6 +225,8 @@ PrInDTMulab <- function(datain,classnames,ctestv,conf.level=0.95,percl,percs=1,N
   datain2 <- data
   ctpreds2 <- matrix(0,ncol=length(inddep),nrow=dim(data)[1])
   unequal2 <- matrix(TRUE,ncol=length(inddep),nrow=dim(data)[1])
+  accdbrt <- matrix(0,nrow=length(inddep),ncol=1)
+  rownames(accdbrt) <- classnames
   hsum2 <- 0
   for (i in 1:length(inddep)){
     #  p <- ctpreds[,i] - 1
@@ -210,12 +236,29 @@ PrInDTMulab <- function(datain,classnames,ctestv,conf.level=0.95,percl,percs=1,N
     }
   }
   for (i in 1:length(inddep)){
+#    rownames(accdbrt)[i] <- colnames(data)[inddep[i]]   ### ?????
     ctpreds2[,i] <- stats::predict(treedbr[[i]],newdata=datain2)
-    if (table(data[,inddep[i]])[1] >= table(data[,inddep[i]])[2] ){
-      unequal2[,i] <- as.integer(data[,inddep[i]]) != ctpreds2[,i]
+    tabdbrt <- table(data[,inddep[i]],ctpreds2[,i])
+#print(table(data[,inddep[i]]))
+#print(tabdbrt)
+    if (length(colnames(tabdbrt)) == 2){
+      if (table(data[,inddep[i]])[1] >= table(data[,inddep[i]])[2] ){
+        unequal2[,i] <- as.integer(data[,inddep[i]]) != ctpreds2[,i]
+        accdbrt[i] <- ( tabdbrt[1,1] / sum(tabdbrt[1,]) + tabdbrt[2,2] / sum(tabdbrt[2,]) ) / 2
+      } else {
+        unequal2[,i] <- as.integer(data[,inddep[i]]) == ctpreds2[,i]
+        accdbrt[i] <- (tabdbrt[1,2] / sum(tabdbrt[1,]) + tabdbrt[2,1] / sum(tabdbrt[2,]) ) / 2
+      }
     } else {
-      unequal2[,i] <- as.integer(data[,inddep[i]]) == ctpreds2[,i]
-    }
+    if (table(data[,inddep[i]])[1] >= table(data[,inddep[i]])[2] ){
+        unequal2[,i] <- as.integer(data[,inddep[i]]) != ctpreds2[,i]
+        accdbrt[i] <- 0.5  ## tabdbrt[2,1] / sum(tabdbrt[,1])    ## ???
+      } else {
+        unequal2[,i] <- as.integer(data[,inddep[i]]) == ctpreds2[,i]
+        accdbrt[i] <- 0.5  ## tabdbrt[1,1] / sum(tabdbrt[,1])    ## ???
+      }
+    } 
+#print(accdbrt[i]) 
     hsum2 <- hsum2 + sum(unequal2[,i])
   }
   errtrue <- c(0,0)
@@ -229,12 +272,11 @@ PrInDTMulab <- function(datain,classnames,ctestv,conf.level=0.95,percl,percs=1,N
   names(errtrue) <- c("01-accuracy", "hamming-accuracy")
 #  message("\n")
   result <- list(accbr = accbr, errbin = errbin, accdbr = accdbr, errext = errext, errtrue = errtrue, 
-    coldata = colnames(datain), inddep = inddep, treebr = treebr, treedbr = treedbr )
+    coldata = colnames(datain), inddep = inddep, treebr = treebr, treedbr = treedbr,accdbrt=accdbrt )
   class(result) <- "PrInDTMulab"
   result
 }
-
-## print
+#' @export
 print.PrInDTMulab <- function(x,...){
   cat("\n","Optimal multi-label classification on subsamples","\n")
   cat("\n")
@@ -276,12 +318,15 @@ print.PrInDTMulab <- function(x,...){
   ##
   cat("\n\n")
   cat("*** Dependent binary relevance: True prediction ***")
+  colnames(x$accdbrt) <- "balanced"
+  cat("\n\n")
+  cat("Single assessment: all","\n")
+  print(x$accdbrt)
   cat("\n")
-  cat("\n","Assessment of PrInDT models (true prediction)","\n")
+  cat("\n","Joint assessment all","\n")
   print(1-x$errtrue)
 }
-
-## plot
+#' @export
 plot.PrInDTMulab <- function(x,...){
 L <- length(x$inddep)
   for (i in 1:L){

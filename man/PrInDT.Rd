@@ -4,8 +4,9 @@
 \alias{PrInDT}
 \title{The basic undersampling loop for classification}
 \usage{
-PrInDT(datain, classname, ctestv=NA, N, percl, percs=1, conf.level=0.95, thres=0.5,
-       stratvers=0, strat=NA, seedl=TRUE)
+PrInDT(datain,classname,ctestv=NA,N,percl,percs=1,conf.level=0.95,thres=0.5,
+         stratvers=0,strat=NA,seedl=TRUE,minsplit=NA,minbucket=NA,repvar=NA,indrep=0,
+         valdat=datain,thr=0.5)
 }
 \arguments{
 \item{datain}{Input data frame with class factor variable 'classname' and the\cr
@@ -23,7 +24,8 @@ If no restrictions exist, the default = NA is used.}
 
 \item{N}{Number (> 2) of repetitions (integer)}
 
-\item{percl}{Undersampling percentage of larger class (numerical, > 0 and <= 1)}
+\item{percl}{Undersampling percentage of larger class (numerical, > 0 and <= 1);\cr
+if percs = default, default of percl = percentage of large class resulting in the same number of observations as in the small class}
 
 \item{percs}{Undersampling percentage of smaller class (numerical, > 0 and <= 1);\cr
 default = 1}
@@ -43,42 +45,73 @@ default = NA (no stratification)}
 
 \item{seedl}{Should the seed for random numbers be set (TRUE / FALSE)?\cr
 default = TRUE}
+
+\item{minsplit}{Minimum number of elements in a node to be splitted;\cr
+default = 20}
+
+\item{minbucket}{Minimum number of elements in a node;\cr
+default = 7}
+
+\item{repvar}{Values of variable defining the substructure in the case of repeated measurements; default = NA}
+
+\item{indrep}{Indicator of repeated measurements ('indrep=1'); default = 0}
+
+\item{valdat}{Validation data; default = datain}
+
+\item{thr}{threshold for element classification: minimum percentage of correct class entries; default = 0.5}
 }
 \value{
 \describe{
-\item{tree1st}{best tree on full sample}
-\item{tree2nd}{2nd-best tree on full sample}
-\item{tree3rd}{3rd-best tree on full sample}
+\item{tree1st}{best tree on validation sample}
+\item{tree2nd}{2nd-best tree on validation sample}
+\item{tree3rd}{3rd-best tree on validation sample}
 \item{treet1st}{best tree on test sample}
 \item{treet2nd}{2nd-best tree on test sample}
 \item{treet3rd}{3rd-best tree on test sample}
-\item{ba1st}{accuracies: largeClass, smallClass, balanced of 'tree1st', both for full and test sample}
-\item{ba2nd}{accuracies: largeClass, smallClass, balanced of 'tree2nd', both for full and test sample}
-\item{ba3rd}{accuracies: largeClass, smallClass, balanced of 'tree3rd', both for full and test sample}
-\item{baen}{accuracies: largeClass, smallClass, balanced of ensemble of all interpretable, 3 best acceptable, and all acceptable trees on full sample}
+\item{ba1st}{accuracies: largeClass, smallClass, balanced of 'tree1st', both for validation and test sample}
+\item{ba2nd}{accuracies: largeClass, smallClass, balanced of 'tree2nd', both for validation and test sample}
+\item{ba3rd}{accuracies: largeClass, smallClass, balanced of 'tree3rd', both for validation and test sample}
+\item{baen}{accuracies: largeClass, smallClass, balanced of ensemble of all interpretable, 3 best acceptable, and all acceptable trees on validation sample}
 \item{bafull}{vector of balanced accuracies of all trees from undersampling}
 \item{batest}{vector of test accuracies of all trees from undersampling}
-\item{dataout}{transformed data set 'datain' for further analyses}
 \item{treeAll}{tree based on all observations}
 \item{baAll}{balanced accuracy of 'treeAll'}
 \item{interpAll}{criterion of interpretability of 'treeall' (TRUE / FALSE)}
 \item{confAll}{confusion matrix of 'treeAll'}
+\item{acc1AE}{Accuracy of full sample tree on Elements of large class} 
+\item{acc2AE}{Accuracy of full sample tree on Elements of small class }  
+\item{bamaxAE}{balanced accuracy of full sample tree on Elements} 
+\item{namA1}{Names of misclassified Elements by full sample tree of large class}
+\item{namA2}{Names of misclassified Elements by full sample tree of small class}
+\item{acc1E}{Accuracy of best tree on Elements of large class} 
+\item{acc2E}{Accuracy of best tree on Elements of small class }  
+\item{bamaxE}{balanced accuracy of best tree on Elements} 
+\item{nam1}{Names of misclassified Elements by best tree of large class}
+\item{nam2}{Names of misclassified Elements by best tree of small class}
+\item{lablarge}{Label of large class} 
+\item{labsmall}{Label of small class} 
+\item{valdat}{Validation set after edit}
+\item{thr}{Threshold for repeated measurements}
 }
 }
 \description{
 The function PrInDT uses ctrees (conditional inference trees from the package "party") for optimal modeling of
 the relationship between the two-class factor variable 'classname' and all other factor and numerical variables
 in the data frame 'datain' by means of 'N' repetitions of undersampling. The optimization citerion is the balanced accuracy 
-on the full sample. The trees generated from undersampling can be restricted by not accepting trees 
+on the validation sample 'valdat' (default = full input sample 'datain'). The trees generated from undersampling can be restricted by not accepting trees 
 including split results specified in the character strings of the vector 'ctestv'.\cr
 The undersampling percentages are 'percl' for the larger class and 'percs' for the smaller class (default = 1).\cr
 The probability threshold 'thres' for the prediction of the smaller class may be specified (default = 0.5).\cr
-Undersampling may be stratified in two ways by the feature 'strat'.
+Undersampling may be stratified in two ways by the feature 'strat'.\cr
+The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr\cr
+In the case of repeated measurements ('indrep=1'), the values of the substructure variable have to be given in 'repvar'. 
+Only one value of 'classname' is allowed for each value of 'repvar'.
+If for a value of 'repvar' the percentage 'thr' of the observed occurence of a value of 'classname' is not reached by the number of predictions of the value of 'classname', a misclassification is detected.
 }
 \details{
 For the optimzation of the trees, we employ a method we call Sumping (Subsampling umbrella of 
 model parameters), a variant of Bumping (Bootstrap umbrella of model parameters) (Tibshirani 
-& Knight, 1999) which use subsampling instead of bootstrapping. The aim of the 
+& Knight, 1999) which uses subsampling instead of bootstrapping. The aim of the 
 optimization is to identify conditional inference trees with maximum predictive power
 on the full sample under interpretability restrictions.
 

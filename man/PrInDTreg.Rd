@@ -4,7 +4,8 @@
 \alias{PrInDTreg}
 \title{Regression tree resampling by the PrInDT method}
 \usage{
-PrInDTreg(datain, regname, ctestv=NA, N, pobs, ppre, conf.level=0.95)
+PrInDTreg(datain,regname,ctestv=NA,N,pobs=c(0.9,0.7),ppre=c(0.9,0.7),
+               conf.level=0.95,seedl=TRUE,minsplit=NA,minbucket=NA,valdat=datain)
 }
 \arguments{
 \item{datain}{Input data frame with class factor variable 'classname' and the\cr
@@ -13,7 +14,7 @@ influential variables, which need to be factors or numericals (transform logical
 \item{regname}{name of regressand variable (character)}
 
 \item{ctestv}{Vector of character strings of forbidden split results;\cr
-{see function \code{\link{PrInDT}} for details.}\cr
+(see function \code{\link{PrInDT}} for details.)\cr
 If no restrictions exist, the default = NA is used.}
 
 \item{N}{Number of repetitions (integer > 0)}
@@ -24,20 +25,32 @@ If no restrictions exist, the default = NA is used.}
 
 \item{conf.level}{(1 - significance level) in function \code{ctree} (numerical, > 0 and <= 1);\cr
 default = 0.95}
+
+\item{seedl}{Should the seed for random numbers be set (TRUE / FALSE)?\cr
+default = TRUE}
+
+\item{minsplit}{Minimum number of elements in a node to be splitted;\cr
+default = 20}
+
+\item{minbucket}{Minimum number of elements in a node;\cr
+default = 7}
+
+\item{valdat}{Validation data; default = datain}
 }
 \value{
 \describe{
 \item{meanint}{Mean number of interpretable trees over the combinations of individual percentages in 'pobs' and 'ppre'}
-\item{R2mean}{Mean R2 on test sets}
-\item{ctmax}{best resampled regression tree according to R2 on the full data set}
-\item{percmax}{Maximum R2 achieved for \%observations}
-\item{perfeamax}{Maximum R2 achieved for \%predictors}
-\item{maxR2}{best R2 on the full data set for resampled regression trees (for 'ctmax')} 
+\item{ctmax}{best resampled regression tree on the validation data set}
+\item{percmax}{Best model achieved for \%observations}
+\item{perfeamax}{Best model achieved for \%predictors}
+\item{maxR2}{maximum R2 on the validation data set for resampled regression trees (for 'ctmax')} 
+\item{minMAE}{minimum MAE (Mean Absolute Error) on the validation data set for resampled regression trees (for 'ctmax')} 
 \item{interpmax}{interpretability of best tree 'ctmax'}
-\item{ctmax2}{second best resampled regression tree according to R2 on the full data set}
-\item{percmax2}{second best R2 achieved for \%observations}
-\item{perfeamax2}{second best R2 achieved for \%features}
-\item{max2R2}{second best R2 on the full data set for resampled regression trees (for 'ctmax2')}
+\item{ctmax2}{second best resampled regression tree on the full data set}
+\item{percmax2}{second best model achieved for \%observations}
+\item{perfeamax2}{second best model achieved for \%features}
+\item{max2R2}{second best R2 on the validation data set for resampled regression trees (for 'ctmax2')}
+\item{min2MAE}{second best MAE on the validation data set for resampled regression trees (for 'ctmax2')}
 \item{interp2max}{interpretability of second-best tree 'ctmax2'}
 }
 }
@@ -45,15 +58,17 @@ default = 0.95}
 Regression tree optimzation to identify the best interpretable tree; interpretability is checked (see 'ctestv').\cr
 The relationship between the target variable 'regname' and all other factor and numerical variables
 in the data frame 'datain' is optimally modeled by means of 'N' repetitions of subsampling.\cr 
-The optimization criterion is the R2 of the model on the full sample.\cr
+The optimization criterion is the R2 of the model on the validation sample 'valdat'.\cr
+Default for the validation sample is the full sample 'datain'.\cr
 Multiple subsampling percentages of observations and predictors can be specified (in 'pobs' and 'ppre', correspondingly).\cr
-The trees generated from undersampling can be restricted by
+The trees generated from subsampling can be restricted by
 rejecting unacceptable trees which include split results specified in the character strings of the vector 'ctestv'.\cr
+The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr
 }
 \details{
 For the optimzation of the trees, we employ a method we call Sumping (Subsampling umbrella of 
 model parameters), a variant of Bumping (Bootstrap umbrella of model parameters) (Tibshirani 
-& Knight, 1999) which use subsampling instead of bootstrapping. The aim of the 
+& Knight, 1999). We use subsampling instead of bootstrapping. The aim of the 
 optimization is to identify conditional inference trees with maximum predictive power
 on the full sample under interpretability restrictions. 
 

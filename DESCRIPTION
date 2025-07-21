@@ -2,7 +2,7 @@ Package: PrInDT
 Type: Package
 Title: Prediction and Interpretation in Decision Trees for
         Classification and Regression
-Version: 1.0.1
+Version: 2.0.0
 Authors@R: c(person("Claus", "Weihs", email = "claus.weihs@tu-dortmund.de",  role = c("aut", "cre")),
              person("Sarah", "Buschfeld", email="sarah.buschfeld@tu-dortmund.de", role="aut"),
              person("Niklas", "Nitsch", email="niklas.nitsch@tu-dortmund.de", role="ctb"))
@@ -21,24 +21,35 @@ Description: Optimization of conditional inference trees from the package 'party
     PrInDTreg() has been developed for regression problems. Finally, the function PostPrInDT() 
     allows for a posterior analysis of the distribution of a specified variable in the terminal 
     nodes of a given tree.
-    References are:
+    In version 2, additionally structured sampling is implemented in functions PrInDTCstruc() and 
+    PrInDTRstruc(). In these functions, repeated measurements data can be analyzed, too. 
+    Moreover, multilabel 2-stage versions of classification and regression trees are 
+    implemented in functions C2SPrInDT() and R2SPrInDT() as well as interdependent 
+    multilabel models in functions SimCPrInDT() and SimRPrInDT(). Finally, for mixtures of 
+    classification and regression models functions Mix2SPrInDT() and SimMixPrInDT() are 
+    implemented. These extensions of PrInDT are all described in Buschfeld & 
+    Weihs (2025Fc).
+    References:
+    -- Buschfeld, S., Weihs, C. (2025Fc) "Optimizing decision trees for the analysis of World Englishes 
+    and sociolinguistic data", Cambridge Elements.
     -- Weihs, C., Buschfeld, S. (2021a) "Combining Prediction and Interpretation in 
-    Decision Trees (PrInDT) - a Linguistic Example" <arXiv:2103.02336>;
+    Decision Trees (PrInDT) - a Linguistic Example" <doi:10.48550/arXiv.2103.02336>;
     -- Weihs, C., Buschfeld, S. (2021b) "NesPrInDT: Nested undersampling in PrInDT" 
-    <arXiv:2103.14931>;
+    <doi:10.48550/arXiv.2103.14931>;
     -- Weihs, C., Buschfeld, S. (2021c) "Repeated undersampling in PrInDT (RePrInDT): Variation 
-    in undersampling and prediction, and ranking of predictors in ensembles" <arXiv:2108.05129>.
+    in undersampling and prediction, and ranking of predictors in ensembles" <doi:10.48550/arXiv.2108.05129>.
 License: GPL-2
 Encoding: UTF-8
-Imports: graphics, MASS, party, splitstackshape, stats, stringr, utils
-RoxygenNote: 7.2.3
+Imports: graphics, MASS, party, splitstackshape, stats, stringr, utils,
+        gdata
+RoxygenNote: 7.3.2
 Depends: R (>= 2.10)
 NeedsCompilation: no
 Maintainer: Claus Weihs <claus.weihs@tu-dortmund.de>
 LazyData: true
-Packaged: 2023-05-09 09:51:23 UTC; weihs
+Packaged: 2025-07-21 17:49:28 UTC; Master
 Author: Claus Weihs [aut, cre],
   Sarah Buschfeld [aut],
   Niklas Nitsch [ctb]
 Repository: CRAN
-Date/Publication: 2023-05-09 22:20:02 UTC
+Date/Publication: 2025-07-21 18:40:33 UTC

@@ -6,18 +6,26 @@
 #' are comparable with the size of the smaller classes for which all their observations are used in undersampling ('percs' = 1 in \code{\link{PrInDT}}).\cr
 #' The class with the highest probability in the K (= number of classes) analyses is chosen for prediction.\cr
 #' Interpretability is checked (see 'ctestv').
+#' The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr
 #'
-#' @usage PrInDTMulev(datain, classname, ctestv=NA, N, conf.level=0.95)
+#' @usage PrInDTMulev(datain,classname,ctestv=NA,N,conf.level=0.95,seedl=FALSE,
+#'                                     minsplit=NA,minbucket=NA)
 #'
 #' @param datain Input data frame with class factor variable 'classname' and the\cr
 #'    influential variables, which need to be factors or numericals (transform logicals and character variables to factors) 
 #' @param classname Name of class variable (character)
 #' @param ctestv Vector of character strings of forbidden split results;\cr
-#'     {see function \code{\link{PrInDT}} for details.}\cr
+#'     (see function \code{\link{PrInDT}} for details.)\cr
 #'     If no restrictions exist, the default = NA is used.
 #' @param N Number of repetitions (integer > 0)
 #' @param conf.level (1 - significance level) in function \code{ctree} (numerical, > 0 and <= 1)\cr
 #'     (default = 0.95)
+#' @param seedl Should the seed for random numbers be set (TRUE / FALSE)?\cr
+#'     default = FALSE
+#' @param minsplit Minimum number of elements in a node to be splitted;\cr
+#'     default = 20
+#' @param minbucket Minimum number of elements in a node;\cr
+#'     default = 7
 #'
 #' @return 
 #' \describe{
@@ -26,6 +34,7 @@
 #' \item{ba}{balanced accuracy of combined predictions} 
 #' \item{conf}{confusion matrix of combined predictions} 
 #' \item{ninterp}{no. of non-interpretable trees} 
+#' \item{acc}{balanced accuracies of best models for individual classes}
 #' }
 #'
 #' @details
@@ -34,8 +43,6 @@
 #' The plot function will produce a series of more than one plot. If you use R, you might want to specify \code{windows(record=TRUE)} before 
 #' \code{plot(name)} to save the whole series of plots. In R-Studio this functionality is provided automatically.
 #'
-#' @exportS3Method print PrInDTMulev
-#' @exportS3Method plot PrInDTMulev
 #' @export PrInDTMulev
 #'
 #' @examples
@@ -56,11 +63,25 @@
 #' @importFrom stats relevel predict
 #' @importFrom party ctree ctree_control
 #'
-PrInDTMulev <- function(datain,classname,ctestv=NA,N,conf.level=0.95){
+PrInDTMulev <- function(datain,classname,ctestv=NA,N,conf.level=0.95,seedl=FALSE,minsplit=NA,minbucket=NA){
   ## input check
   if (typeof(datain) != "list" || typeof(classname) != "character" || !(typeof(ctestv) %in% c("logical", "character")) || N <= 0 ||
-      !(0 < conf.level & conf.level <= 1)){
+      !(0 < conf.level & conf.level <= 1) || typeof(seedl) != "logical" || !(typeof(minsplit) %in% c("logical","double")) || 
+      !(typeof(minbucket) %in% c("logical", "double"))  ) {
     stop("irregular input")
+  }
+  if ((is.na(minsplit) == TRUE) & (is.na(minbucket) == TRUE)){
+    minsplit <- 20
+    minbucket <- 7
+  }
+  if (!(is.na(minsplit) == TRUE) & (is.na(minbucket) == TRUE)){
+    minbucket <- minsplit / 3
+  }
+  if ((is.na(minsplit) == TRUE) & !(is.na(minbucket) == TRUE)){
+    minsplit <- minbucket * 3
+  }
+  if (seedl == TRUE){
+    set.seed(7654321)  # set seed of random numbers
   }
   data <- datain
   names(data)[names(data)==classname] <- "class"
@@ -71,6 +92,7 @@ PrInDTMulev <- function(datain,classname,ctestv=NA,N,conf.level=0.95){
   ctpredsk <- rep(0,n)
   ctpreds <- matrix(0,nrow=n,ncol=K)
   crit1 <- rep(FALSE,K)
+  acci <- rep(0,K)
 ##
 ## loop over the classes (one vs. rest)
 ##
@@ -79,6 +101,9 @@ message("loop over all individual classes vs. rest")
    message("individual class = ",levels(data$class)[k])
    n_class1 <- table(data$class)[k] # no. of elements of studied class
    n_class2 <- n - n_class1 # no. of elements in all other classes
+   if (min(n_class1,n_class2) == 0){
+     stop("irregular situation: only 1 class left")
+   }
    class1 <- as.character(levels(data$class)[k])
    datastud$classstud[data$class == levels(data$class)[k]] <- class1
    datastud$classstud[!(data$class == levels(data$class)[k])] <- "rest"
@@ -86,21 +111,23 @@ message("loop over all individual classes vs. rest")
    names(datastud$classstud) <- "classstud"
   ## determining the percentage for larger class
    if (n_class1 > n_class2){
-     perclin <- n_class2 / (n - n_class2)
+     perclin <- n_class2 / (n - n_class2) # * 0.8
    } else {
-     perclin <- n_class1 / (n - n_class1)
+     perclin <- n_class1 / (n - n_class1) # * 0.8
    }
   ######
   ## call of PrInDT model for one class vs. rest 
   ######
-   outin <- PrInDT(datastud,"classstud",ctestv,N,percl=perclin,percs=1,conf.level)
+   outin <- PrInDT(datastud,"classstud",ctestv,N,percl=perclin,percs=1,conf.level,minsplit=minsplit,minbucket=minbucket)
+#   outin <- PrInDT(datastud,"classstud",ctestv,N,percl=perclin,percs=0.8,conf.level)
    ct <- outin$tree1st
    if (k == 1){
      trees <- ct
    }
-   else{
+   else {
      trees <- c(trees,ct)
    }
+   acci[k] <- outin$ba1st[3]
    if (is.na(ctestv[1]) == FALSE) {
      crit1[k] <- FindSubstr(ct,ctestv) # call of the above function for overall tree
    }
@@ -134,19 +161,17 @@ message("loop over all individual classes vs. rest")
   crit2 <- sum(acc) / K
   crit1sum <- sum(crit1)
 ## results
-  result <- list(class = levels(data$class), trees = trees, ba=crit2, conf = conf, ninterp=crit1sum)
+  result <- list(class = levels(data$class), trees = trees, ba=crit2, conf = conf, ninterp=crit1sum, acc=acci)
   class(result) <- "PrInDTMulev"
   result
 }
-
-####
-## print function
-####
+#' @export
 print.PrInDTMulev <- function(x, ...){
   # output of models
   K <- length(x$class)
   for (k in 1:K){
     cat("\n","tree for class",x$class[k],"\n")
+    cat("balanced accuracy ",x$acc[k],"\n")
     print(x$trees[[k]])
   }
   # output for model characteristics
@@ -164,14 +189,31 @@ print.PrInDTMulev <- function(x, ...){
   cat("***********************************************","\n")
   cat("             ",unname(x$ninterp),"\n")
 }
-
-####
-## plot function
-####
+#' @export
 plot.PrInDTMulev <- function(x, ...){
   # plot of models
   K <- length(x$class)
   for (k in 1:K){
     plot(x$trees[[k]],main=paste0("Tree for class = ",x$class[k]))
   }
+}
+#' @export
+predict.PrInDTMulev <- function(object,classname,newdata,...){
+K <- nlevels(newdata[,classname])
+ctpreds <- matrix(0,nrow=dim(newdata)[1],ncol=K)
+  for (k in 1:K)  {
+    y <- t(array(unlist(stats::predict(object$trees[[k]],type="prob",newdata=newdata)),dim=c(2,dim(newdata)[1])))
+    if (table(newdata[,classname])[k] < dim(newdata)[1]/2){
+      ctpreds[,k] <- y[,2]
+   } else {
+      ctpreds[,k] <- y[,1]
+   }
+  }
+  predclassno <- rep(0,dim(newdata)[1])
+  for (j in 1:dim(newdata)[1]){
+    predclassno[j] <- which.max(ctpreds[j,1:K])
+  }
+  predclass <- names(table(newdata[,classname]))[predclassno]
+  result <-  as.factor(predclass)
+  result
 }

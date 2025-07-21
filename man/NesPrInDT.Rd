@@ -4,8 +4,9 @@
 \alias{NesPrInDT}
 \title{Nested \code{\link{PrInDT}} with additional undersampling of a factor with two unbalanced levels}
 \usage{
-NesPrInDT(datain, classname, ctestv=NA, N, plarge, psmall=1.0, conf.level=0.95,
-       thres=0.5, stratvers=0, strat=NA, seedl=TRUE, nesvar, nesunder, repin)
+NesPrInDT(datain,classname,ctestv=NA,N,plarge,psmall=1.0,conf.level=0.95,
+       thres=0.5,stratvers=0,strat=NA,seedl=TRUE,nesvar,nesunder,repin,
+       minsplit=NA,minbucket=NA)
 }
 \arguments{
 \item{datain}{Input data frame with class factor variable 'classname' and the\cr
@@ -14,7 +15,7 @@ influential variables, which need to be factors or numericals (transform logical
 \item{classname}{Name of class variable (character)}
 
 \item{ctestv}{Vector of character strings of forbidden split results;\cr
-{see function \code{\link{PrInDT}} for details.}\cr
+(see function \code{\link{PrInDT}} for details.)\cr
 If no restrictions exist, the default = NA is used.}
 
 \item{N}{Number of repetitions (integer > 0)}
@@ -45,6 +46,12 @@ default = TRUE}
 \item{nesunder}{Data of factor to be undersampled (integer)}
 
 \item{repin}{Number of repetitions (integer) for undersampling of 'nesvar'}
+
+\item{minsplit}{Minimum number of elements in a node to be splitted;\cr
+default = 20}
+
+\item{minbucket}{Minimum number of elements in a node;\cr
+default = 7}
 }
 \value{
 \describe{  
@@ -70,6 +77,7 @@ restricted by excluding unacceptable trees which include split results specified
 The probability threshold 'thres' for the prediction of the smaller class may be specified (default = 0.5).\cr
 Undersampling may be stratified in two ways by the feature 'strat'.\cr
 The results are evaluated on the full sample and on the subsamples of 'nesunder'.
+The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr
 
 \strong{Reference} \cr Weihs, C., Buschfeld, S. 2021b. NesPrInDT: Nested undersampling in PrInDT. 
 arXiv:2103.14931

@@ -4,7 +4,8 @@
 \alias{PrInDTMulev}
 \title{PrInDT analysis for a classification problem with multiple classes.}
 \usage{
-PrInDTMulev(datain, classname, ctestv=NA, N, conf.level=0.95)
+PrInDTMulev(datain,classname,ctestv=NA,N,conf.level=0.95,seedl=FALSE,
+                                    minsplit=NA,minbucket=NA)
 }
 \arguments{
 \item{datain}{Input data frame with class factor variable 'classname' and the\cr
@@ -13,13 +14,22 @@ influential variables, which need to be factors or numericals (transform logical
 \item{classname}{Name of class variable (character)}
 
 \item{ctestv}{Vector of character strings of forbidden split results;\cr
-{see function \code{\link{PrInDT}} for details.}\cr
+(see function \code{\link{PrInDT}} for details.)\cr
 If no restrictions exist, the default = NA is used.}
 
 \item{N}{Number of repetitions (integer > 0)}
 
 \item{conf.level}{(1 - significance level) in function \code{ctree} (numerical, > 0 and <= 1)\cr
 (default = 0.95)}
+
+\item{seedl}{Should the seed for random numbers be set (TRUE / FALSE)?\cr
+default = FALSE}
+
+\item{minsplit}{Minimum number of elements in a node to be splitted;\cr
+default = 20}
+
+\item{minbucket}{Minimum number of elements in a node;\cr
+default = 7}
 }
 \value{
 \describe{
@@ -28,6 +38,7 @@ If no restrictions exist, the default = NA is used.}
 \item{ba}{balanced accuracy of combined predictions} 
 \item{conf}{confusion matrix of combined predictions} 
 \item{ninterp}{no. of non-interpretable trees} 
+\item{acc}{balanced accuracies of best models for individual classes}
 }
 }
 \description{
@@ -37,6 +48,7 @@ The percentages for undersampling of the larger class ('percl' in \code{\link{Pr
 are comparable with the size of the smaller classes for which all their observations are used in undersampling ('percs' = 1 in \code{\link{PrInDT}}).\cr
 The class with the highest probability in the K (= number of classes) analyses is chosen for prediction.\cr
 Interpretability is checked (see 'ctestv').
+The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr
 }
 \details{
 Standard output can be produced by means of \code{print(name)} or just \code{ name } as well as \code{plot(name)}  where 'name' is the output data 

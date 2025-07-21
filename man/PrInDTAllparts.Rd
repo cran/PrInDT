@@ -5,7 +5,7 @@
 \title{Conditional inference trees (ctrees) based on consecutive parts of the full sample}
 \usage{
 PrInDTAllparts(datain, classname, ctestv=NA, conf.level=0.95, thres=0.5,
-       nesvar, divt)
+       nesvar, divt,minsplit=NA,minbucket=NA)
 }
 \arguments{
 \item{datain}{Input data frame with class factor variable 'classname' and the\cr
@@ -14,7 +14,7 @@ influential variables, which need to be factors or numericals (transform logical
 \item{classname}{Name of class variable (character)}
 
 \item{ctestv}{Vector of character strings of forbidden split results;\cr
-{see function \code{\link{PrInDT}} for details.}\cr
+(see function \code{\link{PrInDT}} for details.)\cr
 If no restrictions exist, the default = NA is used.}
 
 \item{conf.level}{(1 - significance level) in function \code{ctree} (numerical, > 0 and <= 1); default = 0.95}
@@ -24,6 +24,12 @@ If no restrictions exist, the default = NA is used.}
 \item{nesvar}{Name of nesting variable (character)}
 
 \item{divt}{Number of parts of nesting variable nesvar for which models should be determined individually}
+
+\item{minsplit}{Minimum number of elements in a node to be splitted;\cr
+default = 20}
+
+\item{minbucket}{Minimum number of elements in a node;\cr
+default = 7}
 }
 \value{
 \describe{
@@ -36,7 +42,8 @@ If no restrictions exist, the default = NA is used.}
 \description{
 ctrees based on the full sample of the smaller class and consecutive parts of the larger class of the nesting variable 'nesvar'. 
 The variable 'nesvar' has to be part of the data frame 'datain'.\cr   
-  Interpretability is checked (see 'ctestv'); probability threshold can be specified.
+Interpretability is checked (see 'ctestv'); probability threshold can be specified.
+The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr
 
 \strong{Reference}\cr Weihs, C., Buschfeld, S. 2021b. NesPrInDT: Nested undersampling in PrInDT. 
 arXiv:2103.14931

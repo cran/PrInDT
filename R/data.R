@@ -17,6 +17,19 @@
 #' @source
 #' Sarah Buschfeld, TU Dortmund
 "data_zero"
+#' Participants of subject pronoun study
+#'
+#' @description
+#' Participants (random excerpt according to data_zero)
+#'
+#' @format
+#' A dataset with 1024 observations and 1 column
+#' \describe{
+#'   \item{participant}{participant of study (P1 - P51)}
+#' }
+#' @source
+#' Sarah Buschfeld, TU Dortmund
+"participant_zero"
 #' Subject pronouns and a predictor with one very frequent level
 #'
 #' @description
@@ -90,7 +103,8 @@
 #'   \item{Italian}{Italian on sign? Factor (2 levels "0","1")}
 #'   \item{Spanish}{Spanish on sign? Factor (2 levels "0","1")}
 #'   \item{German}{German on sign? Factor (2 levels "0","1")}
-#'   \item{Indian,Mandarin,Portuguese,Libanese,Japanese,Danish,Hebrew,Catalan}{8 infrequent languages: Factor (2 levels "0","1")}
+#'   \item{Indian,Mandarin,Greek,Indonesian,Portuguese,Libanese,Japanese,Russian,Danish,
+#'             Norwegian,Hebrew,Catalan}{12 infrequent languages: Factor (2 levels "0","1")}
 #'   \item{bn.unclear}{brand name unclear: Factor (2 levels "0","1")}
 #'   \item{multilingual.type}{type of multilingualism on sign: Factor (6 levels "0","1","2","3","4","uc")}
 #'   \item{location}{location of sign: Factor (2 levels "M","P")  (anonymized)}
