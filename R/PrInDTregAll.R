@@ -4,6 +4,7 @@
 #' The relationship between the target variable 'regname' and all other factor and numerical variables
 #' in the data frame 'datain' is modeled based on all observations. \cr 
 #' The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr
+#' Besides the maximal R2, the minimal MAE (Mean Absolute Error) is reported.
 #'
 #' @usage PrInDTregAll(datain,regname,ctestv=NA,conf.level=0.95,minsplit=NA,minbucket=NA)
 #'

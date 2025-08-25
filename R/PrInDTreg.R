@@ -1,6 +1,6 @@
 #' Regression tree resampling by the PrInDT method
 #'
-#' @description Regression tree optimzation to identify the best interpretable tree; interpretability is checked (see 'ctestv').\cr
+#' @description The function \code{\link{PrInDTreg}} realizes regression tree optimization to identify the best interpretable tree; interpretability is checked (see 'ctestv').\cr
 #' The relationship between the target variable 'regname' and all other factor and numerical variables
 #' in the data frame 'datain' is optimally modeled by means of 'N' repetitions of subsampling.\cr 
 #' The optimization criterion is the R2 of the model on the validation sample 'valdat'.\cr
@@ -9,6 +9,7 @@
 #' The trees generated from subsampling can be restricted by
 #' rejecting unacceptable trees which include split results specified in the character strings of the vector 'ctestv'.\cr
 #' The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr
+#' Besides the maximal R2, the minimal MAE (Mean Absolute Error) is reported.
 #'
 #' @usage PrInDTreg(datain,regname,ctestv=NA,N,pobs=c(0.9,0.7),ppre=c(0.9,0.7),
 #'                conf.level=0.95,seedl=TRUE,minsplit=NA,minbucket=NA,valdat=datain)

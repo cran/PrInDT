@@ -1,8 +1,7 @@
 #' Repeated \code{\link{PrInDT}} for specified percentage combinations
 #'
 #' @description
-#' The function \code{\link{PrInDT}} is called repeatedly according to all combinations of the percentages specified in the vectors 'plarge' and 
-#' 'psmall'.\cr
+#' By the function \code{\link{RePrInDT}}, the function \code{\link{PrInDT}} is called repeatedly according to all combinations of the percentages specified in the vectors 'plarge' and 'psmall'.\cr
 #' The relationship between the two-class factor variable 'classname' and all other factor and numerical variables
 #' in the data frame 'datain' is optimally modeled by means of 'N' repetitions of undersampling.\cr 
 #' The optimization citerion is the balanced accuracy on the validation sample 'valdat' (default = full input sample 'datain').\cr
@@ -104,7 +103,7 @@ RePrInDT <- function(datain,classname,ctestv=NA,N,plarge,psmall,conf.level=0.95,
   data <- datain
   names(data)[names(data)==classname] <- "class"
   names(valdat)[names(valdat)==classname] <- "class"
-  if (!(all(levels(data$class) %in% levels(valdat$class)))){
+  if (!(identical(levels(data$class),levels(valdat$class)))){
     stop("levels of input class variable unequal levels of validation class variable")
   }
   ## initializations
@@ -113,9 +112,9 @@ RePrInDT <- function(datain,classname,ctestv=NA,N,plarge,psmall,conf.level=0.95,
   acc3en <- array(0,dim=c(length(plarge),length(psmall),6)) # !!!
   simp <- array(0,dim=c(length(plarge),length(psmall),(dim(data)[2])) )
   ## permuting columns
-  data_per <- data
-  for (j in 2:(dim(data)[2])) {
-    data_per[,j] <- sample(data[,j])
+  data_per <- valdat
+  for (j in 2:(dim(valdat)[2])) {
+    data_per[,j] <- sample(valdat[,j])
   }
   k <- 0
   K <- length(plarge) * length(psmall)
@@ -229,5 +228,5 @@ plot.RePrInDT <- function(x, ...){
   ## ranking of predictors
   ####
   cat("\n")
-  barplot(sort(x$simp_m / max(x$simp_m)),horiz=TRUE,main="Normed means of permutation losses")
+  barplot(sort(x$simp_m[x$simp_m>0] / max(x$simp_m)),horiz=TRUE,main="Normed means of permutation losses")
 }

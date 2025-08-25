@@ -6,10 +6,10 @@
 #' The optimization citerion is the balanced accuracy on the validation sample 'valdat' (default is the full input sample 'datain'). 
 #' Other criteria are possible (cf. parameter description of 'crit'). The trees generated from undersampling can be restricted by not accepting trees 
 #' including split results specified in the character strings of the vector 'ctestv'.\cr
-#' The substructure of the observations used for subsampling is specified by the list 'Struc' which consists of the 'name' of the variable representing the substructure,
+#' The substructure of the observations used for subsampling in modelling is specified by the list 'Struc' which consists of the variable 'name' representing the substructure,
 #' the name 'check' of the variable with the information about the categories of the substructure, and the matrix 'labs' which specifies the values of 'check'
 #' corresponding to two categories in its rows, i.e. in 'labs[1,]' and 'labs[2,]'. The names of the categories have to be specified by \code{rownames(labs)}.\cr
-#' See parameter description of 'Struc' for its specification for 'vers="b"' and 'indrep=1'.\cr
+#' See parameter description of 'Struc' for its specification for 'vers="b"' and 'indrep > 0'.\cr
 #' The number of predictors 'Pit' to be included in the model and the number of elements of the substructure 'Eit' have to be specified (lists allowed), and 
 #' undersampling of the categories of 'classname' can be controlled by 'undersamp=TRUE/FALSE'.\cr
 #' Four different versions of structured subsampling exist: \cr
@@ -20,18 +20,21 @@
 #' d) of the elements of the substructure (possibly with additional undersampling) and for each of these subsets subsampling of the predictors 
 #' with the same parameters as version c).\cr
 #' Sampling of the elements of the substructure can be influenced by using weights of the elements ('weights=TRUE') according to the number of appearances of the smaller 
-#' class of 'classnames'. This way, elements with more realisations in the smaller class are preferred.\cr
+#' class of 'classnames'. This way, elements with more realisations in the smaller class are preferred in modelling.\cr
 #' The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr\cr
-#' The parameter 'indrep' indicates repeated measurement situations ('indrep=1', only implemented for 'crit="ba"'); default = 0.\cr
+#' The parameter 'indrep' indicates repeated measurement situations ('indrep > 0', only implemented for 'crit="ba"'); default = 0.\cr
 #' Repeated measurements are multiple measurements of the same variable taken on the same subjects (or objects) either under different conditions or over two or more time periods.\cr
-#' The name of the variable with the repeatedly observed subjects (or objects) has to be specified by 'name' in 'Struc'. Only one value of 'classname' is allowed for each value of 'Struc$name'.
-#' By means of 'indrep=1' it is automatically assumed that the same number of 
-#' subjects (or objects) of the two classes under study have to be used for model building. Possible such numbers can be specified by 'Eit'.    
+#' The variable with the repeatedly observed subjects (or objects) has to be specified by 'name' in 'Struc'. Only one value of 'classname' is allowed for each value of 'Struc$name'.
+#' In case of 'indrep > 0' it is automatically assumed that the same number of 
+#' subjects (or objects) of the two classes under study have to be used for model building. Possible such numbers can be specified by 'Eit'.\cr
+#' For indrep=1, models are optimized for individual observations and the classes of the substructure elements are subsequently determined via the parameter 'thr'.\cr
+#' For indrep=2, models are optimized so that the criterion "ba" is maximal for the substructure elements taking 'thr' into account.\cr
+#' For indrep > 0 and 'valdat' unequal 'datain', the variable 'repvar' defines the substructure for 'valdat', length = dim(valdat)[1] necessary; default = NA'     
 #'
 #' @usage PrInDTCstruc(datain,classname,ctestv=NA,Struc=NA,vers="d",weight=FALSE,
 #'                 Eit=NA,Pit=NA,N=99,Ni=99,undersamp=TRUE,crit="ba",ktest=0,
 #'                 stest=integer(length=0),conf.level=0.95,indrep=0,
-#'                 minsplit=NA,minbucket=NA,valdat=datain,thr=0.5)
+#'                 minsplit=NA,minbucket=NA,repvar=NA,valdat=datain,thr=0.5)
 #'
 #' @param datain Input data frame with class factor variable 'classname' and the\cr
 #'    influential variables, which need to be factors or numericals (transform logicals and character variables to factors) 
@@ -74,6 +77,7 @@
 #' @param minbucket Minimum number of elements in a node;\cr
 #'     default = 7
 #' @param valdat validation data; default = datain
+#' @param repvar Values of variable defining the substructure corresponding to valdat in the case of repeated measurements, length = dim(valdat)[1] necessary; default = NA
 #' @param thr threshold for element classfication: minimum percentage of correct class entries; default = 0.5
 #'
 #' @return
@@ -136,7 +140,7 @@
 #'            conf.level=0.99)
 #'
 PrInDTCstruc <- function(datain,classname,ctestv=NA,Struc=NA,vers="d",weight=FALSE,Eit=NA,Pit=NA,N=99,Ni=99,undersamp=TRUE,
-  crit="ba",ktest=0,stest=integer(length=0),conf.level=0.95,indrep=0,minsplit=NA,minbucket=NA,valdat=datain,thr=0.5){
+  crit="ba",ktest=0,stest=integer(length=0),conf.level=0.95,indrep=0,minsplit=NA,minbucket=NA,repvar=NA,valdat=datain,thr=0.5){
 #
 ## input check
 if ( typeof(datain) != "list" || typeof(classname) != "character" || !(typeof(ctestv) %in% c("logical", "character"))
@@ -176,12 +180,35 @@ data <- datain
 name <- Struc$name
 names(data)[names(data)==classname] <- "class"
 names(valdat)[names(valdat)==classname] <- "class"
-if (!(all(levels(data$class) %in% levels(valdat$class)))){
+if (indrep > 0 & all(is.na(repvar)) == TRUE & identical(data,valdat)) {
+  repv <- name
+} else {
+  repv <- repvar
+}
+if (!(identical(levels(data$class),levels(valdat$class)))){
   stop("levels of input class variable unequal levels of validation class variable")
+}
+# indrep = 2 indicates direct optimization of ba for substructure elements
+if (indrep > 0){
+  Struc$check <- "data$class"
+  check <- eval(parse(text = Struc$check))
+  labs <- matrix(1:2,nrow=2,ncol=1)
+  labs[,1] <- levels(data$class) # as.character(unique(data$class))
+  rownames(labs) <- as.character(labs[,1])
+  undersamp <- FALSE  
+  weight <- FALSE
+}
+if ( crit == "ba" & indrep > 0 ) {
+  if (all(is.na(repv)) == FALSE & length(repv) != dim(valdat)[1] ){
+    stop("irregular input: no. of observations different in substructure and validation set")
+  }
+}
+if ( length(name) != dim(data)[1] | length(name) != length(check)){
+  stop("irregular input: no. of observations different in substructure and data set")
 }
 ## indrep dependencies
 ## Repeated measurement analysis applicable?
-if (indrep == 1){
+if (indrep > 0){
   conti <- table(Struc$name,data$class)
   if ( (sum(conti[,1] > 0) + sum(conti[,2] > 0)) > dim(conti)[1]){
     message("\n","Substructure variable has more than one class per value",
@@ -218,7 +245,7 @@ if (vers != "b"){
   if (Ni > 1) {Ni <- N} ## ?????????
   labs <- Struc$labs
   if (anyNA(Struc[[1]]) != TRUE & indrep == 0){
-    if (Struc$check == paste0(dataname,"$",names(data)[names(data)==classname])) {  ## statt 
+    if (Struc$check == paste0(dataname,"$",names(data)[names(data)==classname])) { 
       check <- eval(parse(text = Struc$check)) 
       Struc$check <- "data$class"
       indrep <- 1
@@ -226,23 +253,7 @@ if (vers != "b"){
       weight <- FALSE
     }
   }
-  if (indrep == 1){
-#  if (Struc$check == paste0(dataname,"$",names(data)[names(data)==classname])) {  ## statt data --> datain name
-#    check <- eval(parse(text = Struc$check))
-    Struc$check <- "data$class"
-    check <- eval(parse(text = Struc$check))
-    undersamp <- FALSE  
-    weight <- FALSE
-#  }
-  }
 ## 
-# indrep = 2: not used in this version
-# created for situations where the dataset name is not included in 'Struc$check'
-#if (indrep == 2){
-#  check <- datain[,Struc[[2]]]
-#  Struc[[2]] <- paste0("data","$",Struc[[2]])
-#  indrep <- 0
-#}
   n_class1 <- table(data$class)[1] # no. of elements of class 1
   n_class2 <- table(data$class)[2] # no. of elements of class 2
   if (min(n_class1,n_class2) == 0){
@@ -251,17 +262,14 @@ if (vers != "b"){
 #print(table(data$class))
   if (n_class1 < n_class2){
     # relevel of classes if smaller class first
-    data$class <- stats::relevel(data$class, levels(data$class)[2]) # larger class now first
     valdat$class <- stats::relevel(valdat$class, levels(data$class)[2]) # larger class now first
+    data$class <- stats::relevel(data$class, levels(data$class)[2]) # larger class now first
   #  lablarge <- names(table(data$class))[1] # class 1 = large
   #  labsmall <- names(table(data$class))[2] # class 2 = small
     n_class1 <- table(data$class)[1] # no. of elements of larger class 1
     n_class2 <- table(data$class)[2] # no. of elements of smaller class 2
   }
-  if (indrep == 1){
-    labs <- matrix(1:2,nrow=2,ncol=1)
-    labs[,1] <- levels(data$class) # as.character(unique(data$class))
-    rownames(labs) <- as.character(labs[,1])
+  if (indrep > 0){
     pS <- table(Struc$name,data$class)[,1] #
     pS <- pS[pS != 0]
     pS <- pS / pS
@@ -271,10 +279,8 @@ if (vers != "b"){
     pE <- pE[pE != 0]
     pE <- pE / pE
 #print(length(pE))
-  }
-#  if (Ni > 1) {Ni <- N} ## ?????????
-  if (indrep == 0){
-#    check <- eval(parse(text = Struc$check))  ## check not equal classname!!!   #### ???????  TESTTEST
+  } else {
+#    check <- eval(parse(text = Struc$check))  ## check not equal classname!!!
     p <- table(Struc$name,data$class)[,2] # /sum(table(Struc$name,data$class)[,2]) * 100
     pS <- p[unique(Struc$name[check %in% Struc$labs[1,]])] 
     pE <- p[unique(Struc$name[check %in% Struc$labs[2,]])]
@@ -282,45 +288,39 @@ if (vers != "b"){
     pE[pE == 0] <- 5e-10
   }
   ## weights 
-#print(p)
-#print(pS)
-#print(pE)
-#pS <- pS[pS > 0]
-#pE <- pE[pE > 0]
-  if (all(is.na(Eit)) == TRUE){
-    Cl <- min(length(pS),length(pE))
-    Eit <- c((Cl-4):Cl)
-  }
   if (weight == FALSE){
     pS[pS > 5e-10] <- 1 
     pE[pE > 5e-10] <- 1
   }
+  if (all(is.na(Eit)) == TRUE){
+    Cl <- min(length(pS),length(pE))
+    Eit <- c((Cl-4):Cl)
+  }
 }
-#print(names(pS))
-#print(length(pS))
-#print(names(pE))
-#print(length(pE))
 if (max(Eit) > min(length(pS),length(pE))){stop("Too many substructure elements requested: Maximum is ",min(length(pS),length(pE)))}
 #
 ## PrInDT function calls 
 if ((vers == "d") | (vers == "a")){
-  out <- PrInDTstruc1(data,classname,ctestv=ctestv,name=name,check=check,labs=labs,N=N,Ni=Ni,Eit=Eit,Pit=Pit,crit=crit,ktest=ktest,stest=stest,p1=pS,p2=pE,undersamp=undersamp,co=conf.level,minsplit=minsplit,minbucket=minbucket,valdat)
+  out <- PrInDTstruc1(data,classname,ctestv=ctestv,name=name,check=check,labs=labs,N=N,Ni=Ni,Eit=Eit,Pit=Pit,crit=crit,ktest=ktest,stest=stest,p1=pS,p2=pE,undersamp=undersamp,co=conf.level,minsplit=minsplit,minbucket=minbucket,repvar=repv,valdat=valdat,indrep=indrep,thr=thr)
+  nam1 <- out$nam1
+  nam2 <- out$nam2
 }
 if ((vers == "c") | (vers == "b")){
-  out <- PrInDTstruc2(data,classname,ctestv=ctestv,name=name,check=check,labs=labs,N=N,Ni=Ni,Pit=Pit,Eit=Eit,crit=crit,ktest=ktest,stest=stest,p1=pS,p2=pE,undersamp=undersamp,co=conf.level,minsplit=minsplit,minbucket=minbucket,valdat) 
+  out <- PrInDTstruc2(data,classname,ctestv=ctestv,name=name,check=check,labs=labs,N=N,Ni=Ni,Pit=Pit,Eit=Eit,crit=crit,ktest=ktest,stest=stest,p1=pS,p2=pE,undersamp=undersamp,co=conf.level,minsplit=minsplit,minbucket=minbucket,repvar=repv,valdat=valdat,indrep=indrep,thr=thr) 
+  nam1 <- out$nam1
+  nam2 <- out$nam2
 }
 #
-## indrep = 1: 'ba' calculation for elements
+## indrep = 1: 'ba' calculation for elements for models optimized for individual observations 
 acc1E <- 0
 acc2E <- 0
 bamaxE <- 0
-nam1 <-  list()
-nam2 <- list()
-if (indrep == 1){
-  pred <- predict(out$modbest,newdata=data)
+if (crit == "ba" & indrep == 1){
+  nam1 <-  list()
+  nam2 <- list()
+  pred <- predict(out$modbest,newdata=valdat)  ## data???
   ch <- table(Struc[[1]],pred)
- # class <- datain[,names(datain)==classname]
-  conti <- cbind(table(Struc[[1]],data$class),ch)
+  conti <- cbind(table(Struc[[1]],valdat$class),ch)  ## data???
   no1 <- sum(conti[,1] > 0)
   no2 <- sum(conti[,2] > 0)
   for (i in 1:dim(conti)[1]){
@@ -339,9 +339,6 @@ if (indrep == 1){
 }
 #
 ## results
-#if (vers == "b"){
-#  names(data)[names(data)==classname] <- "class"
-#}
 lablarge <- names(table(data$class))[1] # class 1 = large
 labsmall <- names(table(data$class))[2] # class 2 = small 
 result <- list(modbest = out$modbest, interp=out$interp, dmax=out$dmax, ntmax = out$ntmax, acc1 = out$acc1, acc2 = out$acc2, 
@@ -389,7 +386,7 @@ print.PrInDTCstruc <- function(x,...){
   Elements <- cbind(as.character(x$bestTrain$check[x$bestTrain$SubStruc %in% x$ind2max]),
     as.character(x$bestTrain$SubStruc[x$bestTrain$SubStruc %in% x$ind2max]))
   print(table(Elements,exclude=x$labs))
-  if (x$indrep == 1){
+  if (x$indrep > 0){
     print(table(Elements,exclude=x$ind2max))
   } else {
     print(table(Elements,exclude=c(x$ind2max,x$labs[1,])))
@@ -404,8 +401,13 @@ print.PrInDTCstruc <- function(x,...){
 if (x$crit == "ba"){
   accs <- c(round(x$acc1,digits=6),round(x$acc2,digits=6),round(x$bamax,digits=6))
   names(accs) <- c(x$lablarge,x$labsmall,"balanced")
-  cat("\n","Validation sample accuracies of best tree (observations) ","\n")
-  print(accs,row.names=FALSE)
+  if (x$indrep < 2){
+    cat("\n","Validation sample accuracies of best tree (observations) ","\n")
+    print(accs,row.names=FALSE)
+  } else {
+    cat("\n","Validation sample accuracies of best tree (Elements) ","\n")
+    print(accs,row.names=FALSE)
+  }    
 #  cat("\n","Validation sample accuracies of best tree (observations)","\n",x$lablarge,"\t",x$labsmall,"\t","balanced","\n")
 } else {
   accs <- c(round(x$acc1,digits=6),round(x$acc2,digits=6),round(x$bamax,digits=6))
@@ -432,6 +434,13 @@ if (x$indrep == 1 & x$crit == "ba"){
 #  cat("\n","Input sample accuracies of best tree (Elements)","\n",x$lablarge,"\t",x$labsmall,"\t","balanced","\n") 
 #  cat(" ",c(round(x$acc1E,4),"\t","  ",round(x$acc2E,4),"\t","  ",round(x$bamaxE,4)),"\n\n")
   cat("Wrongly predicted Elements:","\n")
+  cat(x$lablarge,"\n")
+  cat(unlist(x$nam1),"\n")
+  cat(x$labsmall,"\n")
+  cat(unlist(x$nam2),"\n")
+}
+if (x$indrep == 2 & x$crit == "ba"){
+    cat("Wrongly predicted Elements:","\n")
   cat(x$lablarge,"\n")
   cat(unlist(x$nam1),"\n")
   cat(x$labsmall,"\n")

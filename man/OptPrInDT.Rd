@@ -6,7 +6,7 @@
 \usage{
 OptPrInDT(data,classname,ctestv=NA,N=99,plmax=0.09,psmax=0.9,
                distl=0.01,dists=0.1,conf.level=0.95,minsplit=NA,minbucket=NA,
-               valdat=data)
+               valdat=data,steps=3)
 }
 \arguments{
 \item{data}{Input data frame with class factor variable 'classname' and the\cr
@@ -46,6 +46,8 @@ default = 20}
 default = 7}
 
 \item{valdat}{validation data; default = data}
+
+\item{steps}{number of optimization steps = 1, 2, 3; default = 3}
 }
 \value{
 \describe{
@@ -56,8 +58,8 @@ default = 7}
 }
 }
 \description{
-The function OptPrInDT applies an iterative technique for finding optimal undersampling percentages 
- 'percl' for the larger class and 'percs' for the smaller class by a nested grid search for the use of the function PrInDT for
+The function \code{\link{OptPrInDT}} applies an iterative technique for finding optimal undersampling percentages 
+ 'percl' for the larger class and 'percs' for the smaller class by a nested grid search for the use of the function \code{\link{PrInDT}} for
 the relationship between the two-class factor variable 'classname' and all other factor and numerical variables
 in the data frame 'data' by means of 'N' repetitions of undersampling. The optimization citerion is the balanced accuracy 
 on the validation sample 'valdat' (default = full sample 'data'). The trees generated from undersampling can be restricted by not accepting trees 
@@ -65,6 +67,7 @@ including split results specified in the character strings of the vector 'ctestv
 The inputs plmax and psmax determine the maximal values of the percentages and the inputs distl and dists the
 the distances to the next smaller percentage to be tried.\cr
 The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr
+The parameter 'steps' controls, how many of the 3 possible optimization steps should be carried out; default=3.\cr
 }
 \details{
 See help("RePrInDT") and help("PrInDT") for further information.
@@ -78,7 +81,7 @@ data <- na.omit(datastrat) # cleaned full data: no NAs
 # interpretation restrictions (split exclusions)
 ctestv <- rbind('ETH == {C2a, C1a}','MLU == {1, 3}') # split exclusions
 # call of OptPrInDT
-out <- OptPrInDT(data,"real",ctestv,N=24,conf.level=0.995) # unstratified
+out <- OptPrInDT(data,"real",ctestv,N=24,conf.level=0.99,steps=1) # unstratified
 out # print best model and ensembles as well as all observations
 plot(out)
 

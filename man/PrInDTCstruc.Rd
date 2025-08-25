@@ -7,7 +7,7 @@
 PrInDTCstruc(datain,classname,ctestv=NA,Struc=NA,vers="d",weight=FALSE,
                 Eit=NA,Pit=NA,N=99,Ni=99,undersamp=TRUE,crit="ba",ktest=0,
                 stest=integer(length=0),conf.level=0.95,indrep=0,
-                minsplit=NA,minbucket=NA,valdat=datain,thr=0.5)
+                minsplit=NA,minbucket=NA,repvar=NA,valdat=datain,thr=0.5)
 }
 \arguments{
 \item{datain}{Input data frame with class factor variable 'classname' and the\cr
@@ -68,6 +68,8 @@ default = 20}
 \item{minbucket}{Minimum number of elements in a node;\cr
 default = 7}
 
+\item{repvar}{Values of variable defining the substructure corresponding to valdat in the case of repeated measurements, length = dim(valdat)[1] necessary; default = NA}
+
 \item{valdat}{validation data; default = datain}
 
 \item{thr}{threshold for element classfication: minimum percentage of correct class entries; default = 0.5}
@@ -109,10 +111,10 @@ in the data frame 'datain' by means of 'N' repetitions of subsampling from a sub
 The optimization citerion is the balanced accuracy on the validation sample 'valdat' (default is the full input sample 'datain'). 
 Other criteria are possible (cf. parameter description of 'crit'). The trees generated from undersampling can be restricted by not accepting trees 
 including split results specified in the character strings of the vector 'ctestv'.\cr
-The substructure of the observations used for subsampling is specified by the list 'Struc' which consists of the 'name' of the variable representing the substructure,
+The substructure of the observations used for subsampling in modelling is specified by the list 'Struc' which consists of the variable 'name' representing the substructure,
 the name 'check' of the variable with the information about the categories of the substructure, and the matrix 'labs' which specifies the values of 'check'
 corresponding to two categories in its rows, i.e. in 'labs[1,]' and 'labs[2,]'. The names of the categories have to be specified by \code{rownames(labs)}.\cr
-See parameter description of 'Struc' for its specification for 'vers="b"' and 'indrep=1'.\cr
+See parameter description of 'Struc' for its specification for 'vers="b"' and 'indrep > 0'.\cr
 The number of predictors 'Pit' to be included in the model and the number of elements of the substructure 'Eit' have to be specified (lists allowed), and 
 undersampling of the categories of 'classname' can be controlled by 'undersamp=TRUE/FALSE'.\cr
 Four different versions of structured subsampling exist: \cr
@@ -123,13 +125,16 @@ with parameters 'N', 'Ni', 'Eit', and 'Pit', and\cr
 d) of the elements of the substructure (possibly with additional undersampling) and for each of these subsets subsampling of the predictors 
 with the same parameters as version c).\cr
 Sampling of the elements of the substructure can be influenced by using weights of the elements ('weights=TRUE') according to the number of appearances of the smaller 
-class of 'classnames'. This way, elements with more realisations in the smaller class are preferred.\cr
+class of 'classnames'. This way, elements with more realisations in the smaller class are preferred in modelling.\cr
 The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr\cr
-The parameter 'indrep' indicates repeated measurement situations ('indrep=1', only implemented for 'crit="ba"'); default = 0.\cr
+The parameter 'indrep' indicates repeated measurement situations ('indrep > 0', only implemented for 'crit="ba"'); default = 0.\cr
 Repeated measurements are multiple measurements of the same variable taken on the same subjects (or objects) either under different conditions or over two or more time periods.\cr
-The name of the variable with the repeatedly observed subjects (or objects) has to be specified by 'name' in 'Struc'. Only one value of 'classname' is allowed for each value of 'Struc$name'.
-By means of 'indrep=1' it is automatically assumed that the same number of 
-subjects (or objects) of the two classes under study have to be used for model building. Possible such numbers can be specified by 'Eit'.
+The variable with the repeatedly observed subjects (or objects) has to be specified by 'name' in 'Struc'. Only one value of 'classname' is allowed for each value of 'Struc$name'.
+In case of 'indrep > 0' it is automatically assumed that the same number of 
+subjects (or objects) of the two classes under study have to be used for model building. Possible such numbers can be specified by 'Eit'.\cr
+For indrep=1, models are optimized for individual observations and the classes of the substructure elements are subsequently determined via the parameter 'thr'.\cr
+For indrep=2, models are optimized so that the criterion "ba" is maximal for the substructure elements taking 'thr' into account.\cr
+For indrep > 0 and 'valdat' unequal 'datain', the variable 'repvar' defines the substructure for 'valdat', length = dim(valdat)[1] necessary; default = NA'
 }
 \details{
 See Buschfeld & Weihs (2025), Optimizing decision trees for the analysis of World Englishes and sociolinguistic data. Cambridge University Press, section 4.5.1, for further information.

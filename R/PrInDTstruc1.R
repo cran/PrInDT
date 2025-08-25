@@ -1,12 +1,6 @@
 #' @noRd
 #'
-PrInDTstruc1 <- function(data,class,ctestv=NA,name,check,labs,Ni,N=NA,Eit,Pit,undersamp=TRUE,co,crit="ba",ktest=0,stest=integer(length=0),p1,p2,minsplit=20,minbucket=7,valdat){
-#names(data)[names(data)==class] <- "class"
-#names(valdat)[names(valdat)==class] <- "class"
-#name <- Struc$name
-##check <- Struc$check
-#check <- eval(parse(text = Struc$check)) 
-#labs <- Struc$labs
+PrInDTstruc1 <- function(data,class,ctestv=NA,name,check,labs,Ni,N=NA,Eit,Pit,undersamp=TRUE,co,crit="ba",ktest=0,stest=integer(length=0),p1,p2,minsplit=20,minbucket=7,repvar,valdat,indrep=0,thr=0.5){
 lMit <- length(Eit)
 lDit <- length(Pit)
 if (Ni > 1){
@@ -17,6 +11,8 @@ if (is.na(N) == TRUE){
 }
 lablarge <- names(table(data$class))[1] # class 1 = large
 labsmall <- names(table(data$class))[2] # class 2 = small 
+nam1max <- list()
+nam2max <- list()
 bamax <- 0
 tamax <- 0
 D <- dim(data)[2] - 1
@@ -72,13 +68,39 @@ for (M in Eit){
         class.pred <- predict(outAll$treeAll,newdata=valdat)
         class.pred <- relevel(class.pred,ref=levels(valdat$class)[1])
       # sum(class.pred == data$class) / length(class.pred)
-        conti <- table(class.pred,valdat$class)
-        if (dim(conti)[1] == 1){                                                ## NEWNEW
-          conti <- matrix(c(conti,0,0),nrow=2,byrow=TRUE)
+        nam1 <- list()
+        nam2 <- list()
+        if (indrep == 2){
+        #  acc1E <- 0
+        #  acc2E <- 0
+        #  pred <- predict(out$modbest,newdata=data)
+          ch <- table(repvar,class.pred)
+        # class <- datain[,names(datain)==classname]
+          conti <- cbind(table(repvar,valdat$class),ch)
+          no1 <- sum(conti[,1] > 0)
+          no2 <- sum(conti[,2] > 0)
+          for (i in 1:dim(conti)[1]){
+            if (conti[i,2] > 0 & conti[i,4] <= (conti[i,2]*thr)){ 
+              nam2 <- c(nam2,rownames(ch)[i])
+            }
+            if (conti[i,1] > 0 & conti[i,3] < (conti[i,1]*thr)){ 
+              nam1 <- c(nam1,rownames(ch)[i])
+            }
+          }
+          ba2 <- 1- length(nam2) / no2
+          ba1 <- 1 - length(nam1) / no1  
+          ba <- (ba1 + ba2)/2
+          if (length(nam1) == 0) {nam1 <- "-"}
+          if (length(nam2) == 0) {nam2 <- "-"}
+        } else {
+          conti <- table(class.pred,valdat$class)
+          if (dim(conti)[1] == 1){                                                ## NEWNEW
+            conti <- matrix(c(conti,0,0),nrow=2,byrow=TRUE)
+          }
+          ba1 <- conti[1,1] / (conti[1,1] + conti[2,1])
+          ba2 <- conti[2,2] / (conti[1,2] + conti[2,2])
+          ba <- (ba1 + ba2)/2
         }
-        ba1 <- conti[1,1] / (conti[1,1] + conti[2,1])
-        ba2 <- conti[2,2] / (conti[1,2] + conti[2,2])
-        ba <- (ba1 + ba2)/2
         if (ba > bamax & outAll$interpAll == FALSE){
           bamax <- ba
           acc1 <- ba1
@@ -88,6 +110,8 @@ for (M in Eit){
           indmax <- colnames(datat)[1:D]
           ind1max <- ind1
           ind2max <- ind2
+          nam1max <- nam1
+          nam2max <- nam2
           outmax <- outAll
           gmaxTrain <- cbind(zTTrain,as.vector(zTname),as.vector(zTcheck))
           colnames(gmaxTrain) <- c(colnames(zTTrain),"SubStruc","check")
@@ -227,13 +251,39 @@ for (M in Eit){
             class.pred <- predict(outAll$treeAll,newdata=valdat)
             class.pred <- relevel(class.pred,ref=levels(valdat$class)[1])
       # sum(class.pred == data$class) / length(class.pred)
-            conti <- table(class.pred,valdat$class)
-            if (dim(conti)[1] == 1){                                                ## NEWNEW
-              conti <- matrix(c(conti,0,0),nrow=2,byrow=TRUE)
+            nam1 <- list()
+            nam2 <- list()
+            if (indrep == 2){
+            #  acc1E <- 0
+            #  acc2E <- 0
+            #  pred <- predict(out$modbest,newdata=data)
+              ch <- table(repvar,class.pred)
+            # class <- datain[,names(datain)==classname]
+              conti <- cbind(table(repvar,valdat$class),ch)
+              no1 <- sum(conti[,1] > 0)
+              no2 <- sum(conti[,2] > 0)
+              for (i in 1:dim(conti)[1]){
+                if (conti[i,2] > 0 & conti[i,4] <= (conti[i,2]*thr)){ 
+                  nam2 <- c(nam2,rownames(ch)[i])
+                }
+                if (conti[i,1] > 0 & conti[i,3] < (conti[i,1]*thr)){ 
+                  nam1 <- c(nam1,rownames(ch)[i])
+                }
+              }
+              ba2 <- 1 - length(nam2) / no2
+              ba1 <- 1 - length(nam1) / no1  
+              ba <- (ba1 + ba2)/2
+              if (length(nam1) == 0) {nam1 <- "-"}
+              if (length(nam2) == 0) {nam2 <- "-"}
+            } else {
+              conti <- table(class.pred,valdat$class)
+              if (dim(conti)[1] == 1){                                                ## NEWNEW
+                conti <- matrix(c(conti,0,0),nrow=2,byrow=TRUE)
+              }
+              ba1 <- conti[1,1] / (conti[1,1] + conti[2,1])
+              ba2 <- conti[2,2] / (conti[1,2] + conti[2,2])
+              ba <- (ba1 + ba2)/2
             }
-            ba1 <- conti[1,1] / (conti[1,1] + conti[2,1])
-            ba2 <- conti[2,2] / (conti[1,2] + conti[2,2])
-            ba <- (ba1 + ba2)/2
             if (ba > bamax & outAll$interpAll == FALSE){
               bamax <- ba
 #print(c(i,d,bamax))
@@ -244,6 +294,8 @@ for (M in Eit){
               indmax <- colnames(datat)[1:d]
               ind1max <- ind1
               ind2max <- ind2
+              nam1max <- nam1
+              nam2max <- nam2
               outmax <- outAll
               gmaxTrain <- cbind(zTTrain,as.vector(zTname),as.vector(zTcheck))
               colnames(gmaxTrain) <- c(colnames(zTTrain),"SubStruc","check")
@@ -396,7 +448,7 @@ if (Ni > 0){
   interp <- c(interp,(lMit*N))
 }
 ##
-  result <- list(interp=interp, dmax=dmax, ntmax = ntmax, acc1 = acc1, acc2 = acc2, 
+  result <- list(interp=interp, dmax=dmax, ntmax = ntmax, acc1 = acc1, acc2 = acc2, nam1=nam1max, nam2=nam2max,
      bamax=bamax,tamax=tamax,kumin=kumin,elems=elems,mindlong=mindlong,
      ind1max = ind1max, ind2max = ind2max, indmax=indmax, modbest = outmax$treeAll, gmaxTrain = 
      gmaxTrain, gmaxTest = gmaxTest)

@@ -27,7 +27,7 @@ default = 20}
 \item{minbucket}{Minimum number of elements in a node;\cr
 default = 7}
 
-\item{repvar}{Values of variable defining the substructure in the case of repeated measurements; default=NA}
+\item{repvar}{Values of variable defining the substructure in the case of repeated measurements, length = dim(datain)[1] necessary; default=NA}
 
 \item{indrep}{Indicator of repeated measurements ('indrep=1'); default = 0}
 

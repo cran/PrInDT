@@ -6,8 +6,8 @@
 #' on the validation sample 'valdat' (default = full input sample 'datain'). The trees generated from undersampling can be restricted by not accepting trees 
 #' including split results specified in the character strings of the vector 'ctestv'.\cr
 #' The undersampling percentages are 'percl' for the larger class and 'percs' for the smaller class (default = 1).\cr
-#' The probability threshold 'thres' for the prediction of the smaller class may be specified (default = 0.5).\cr
-#' Undersampling may be stratified in two ways by the feature 'strat'.\cr
+#' A probability threshold 'thres' for the prediction of the smaller class may be specified (default = 0.5).\cr
+#' Undersampling may be stratified in two ways by the option 'stratvers'.\cr
 #' The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr\cr
 #' In the case of repeated measurements ('indrep=1'), the values of the substructure variable have to be given in 'repvar'. 
 #' Only one value of 'classname' is allowed for each value of 'repvar'.
@@ -47,7 +47,7 @@
 #'     default = 20
 #' @param minbucket Minimum number of elements in a node;\cr
 #'     default = 7
-#' @param repvar Values of variable defining the substructure in the case of repeated measurements; default = NA
+#' @param repvar Values of variable defining the substructure in the case of repeated measurements, length = dim(valdat)[1] necessary; default = NA
 #' @param indrep Indicator of repeated measurements ('indrep=1'); default = 0
 #' @param valdat Validation data; default = datain
 #' @param thr threshold for element classification: minimum percentage of correct class entries; default = 0.5
@@ -183,46 +183,56 @@ PrInDT <- function(datain,classname,ctestv=NA,N,percl=NA,percs=1,conf.level=0.95
     percl <- percs*n_class2/n_class1
   }
   n <- n_class1 + n_class2 # overall no. of observations in data
-  ## reordering of classes: smaller class first
-  if (n_class1 > n_class2){
-    order_class <- order(as.numeric(data$class),decreasing=TRUE) # re-ordered line numbers
-  } else {
-    order_class <- order(as.numeric(data$class))
-  }
-  if (indrep == 1) {repv <- repv[order_class]}
+  ## reordering of classes: smaller class first in observations
+#print(c(n_class1,n_class2))
+ # if (n_class1 > n_class2){
+   order_class <- order(as.numeric(data$class),decreasing=TRUE) # re-ordered line numbers
+ # } else {
+ #   order_class <- order(as.numeric(data$class))
+ # }
   if (percl*n_class1 < 3 || percs*n_class2 < 3){
-      stop("Number of tokens in one of the class levels too low (< 3)")
+      stop("Number of observations in one of the class levels too low (< 3)")
   }
   data <- data[order_class,] # data now reordered: smaller class first
   ## validation set re-ordered
   if (identical(valdat, datain)){
     valdat <- data
+    if (indrep == 1) {repv <- repv[order_class]}
   }
   names(valdat)[names(valdat)==classname] <- "class"
-  if (!(all(levels(data$class) %in% levels(valdat$class)))){
+  valdat$class <- stats::relevel(valdat$class, levels(data$class)[1]) # larger class now first  ## NEWNEW
+  if (!(identical(levels(data$class),levels(valdat$class)))){
     stop("levels of input class variable unequal levels of validation class variable")
   }
-  ######
-  ## model with all observations
+  n_class1v <- table(valdat$class)[1] # no. of elements of larger class 1
+  n_class2v <- table(valdat$class)[2] # no. of elements of smaller class 2
+  if (min(n_class1v,n_class2v) == 0){
+   stop("irregular input: only 1 class in valdation set")
+  }
+  nv <- n_class1v + n_class2v
+  if (indrep == 1 & length(repv) != dim(valdat)[1]){
+    stop("irregular input: no. of observations different in 'repvar' and validation set")
+  }
+######
+  ## model with all original observations
   ######
   ct <- party::ctree(class ~ ., data = data, control = party::ctree_control(mincriterion=conf.level,minsplit=minsplit,minbucket=minbucket))
   if (thres != 0.5){
-    predsprob <- stats::predict(ct,type="prob")
-    ctpreds <- as.factor(sapply( 1:dim(data)[1],
+    predsprob <- stats::predict(ct,type="prob",newdata=valdat)
+    ctpreds <- as.factor(sapply( 1:dim(valdat)[1],
                                  function(x)
                                    ifelse(predsprob[[x]][2] > thres,
-                                          levels(data$class)[2], levels(data$class)[1] )))
+                                          levels(valdat$class)[2], levels(valdat$class)[1] )))
   } else {
-    ctpreds <- stats::predict(ct) # predictions for all observations
+    ctpreds <- stats::predict(ct,newdata=valdat) # predictions for all validation observations
   }
   if (dim(table(ctpreds))[1] > 1){
-    confAll <- table(ctpreds, data$class)  # confusion matrix calculation
+    confAll <- table(ctpreds, valdat$class)  # confusion matrix calculation
   # balanced accuracy
-    crit2 <- (confAll[1,1] / n_class1 + confAll[2,2] / n_class2)/2
-  }
-  else {
-    confAll <- matrix(c(table(data$class),0,0),nrow=2,byrow=TRUE)
-    colnames(confAll) <- names(table(data$class))
+    crit2 <- (confAll[1,1] / n_class1v + confAll[2,2] / n_class2v)/2
+  } else {
+    confAll <- matrix(c(table(valdat$class),0,0),nrow=2,byrow=TRUE)
+    colnames(confAll) <- names(table(valdat$class))
     rownames(confAll) <- colnames(confAll)
     crit2 <- 0.5
   }
@@ -238,9 +248,10 @@ bamaxAE <- 0
 namA1 <-  list()
 namA2 <- list()
 if (indrep == 1){
-  pred <- predict(ct,newdata=data)
+  pred <- predict(ct,newdata=valdat)  ## NEWNEW
+#print(c(length(repv),length(pred)))
   ch <- table(repv,pred)
-  conti <- cbind(table(repv,data$class),ch)
+  conti <- cbind(table(repv,valdat$class),ch)  ## NEWNEW
 #print(conti)
   no1 <- sum(conti[,1] > 0)
   no2 <- sum(conti[,2] > 0)
@@ -272,9 +283,9 @@ if (indrep == 1){
   s_ind <- matrix(0,nrow=N,ncol=n) # matrix for resampled indices
   preds <- matrix(0,nrow=N,ncol=n) # matrix for predictions
   preds_ordered <- preds   # matrix for ordered predictions
-  preds_orderedv <- preds  # matrix for validation 
+  preds_orderedv <- matrix(0,nrow=N,ncol=nv)  # matrix for validation predictions
   crit1 <- rep("FALSE",N) # vector for crit1 (interpretability)
-  crit2 <- rep(0,N)      # vector for crit2 (predictive power on full sample)
+  crit2 <- rep(0,N)      # vector for crit2 (predictive power on validation sample)
   crit3 <- rep(0,N)      # vector for crit3 (predictive power on test sample)
   trees <- ct              # initialization of vector of trees (to be concatenated)
   if (is.na(strat) == FALSE){
@@ -398,7 +409,7 @@ if (indrep == 1){
     } else {
       crit3[i] <- chs[i,5] / (chs[i,5] + chs[i,6])  # test balanced accuracy
     }
-    ###
+    ###########################
     ## validation data 
     if (thres != 0.5){
       predsprob <- stats::predict(ct,newdata=valdat,type="prob")
@@ -558,11 +569,11 @@ nam1 <-  list()
 nam2 <- list()
 ###
 if (indrep == 1){ 
-  pred <- predict(trees[[three[1]]],newdata=data)
+  pred <- predict(trees[[three[1]]],newdata=valdat)  ## NEWNEW
 #print(table(pred))
   ch <- table(repv,pred)
 #print(dim(ch))
-  conti <- cbind(table(repv,data$class),ch)
+  conti <- cbind(table(repv,valdat$class),ch)  ## NEWNEW
 #print(conti)
   no1 <- sum(conti[,1] > 0)
   no2 <- sum(conti[,2] > 0)

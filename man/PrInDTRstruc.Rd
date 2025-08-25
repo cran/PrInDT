@@ -82,13 +82,13 @@ indrep=1: Struc=list(name) only; default = 0}
 }
 }
 \description{
-The function PrInDTRstruc applies structured subsampling for finding an optimal subsample to model
+The function \code{\link{PrInDTRstruc}} applies structured subsampling for finding an optimal subsample to model
 the relationship between the continuous variable 'regname' and all other factor and numerical variables
 in the data frame 'datain' by means of 'M' repetitions of subsampling from a substructure and 'N' repetitions of subsampling from the predictors. 
 The optimization citerion is the goodness of fit R2 on the validation sample 'valdat' (default = 'datain').  
 The trees generated from undersampling can be restricted by not accepting trees 
 including split results specified in the character strings of the vector 'ctestv'.\cr
-The substructure of the observations used for subsampling is specified by the list 'Struc' which consists of the 'name' of the variable representing the substructure,
+The substructure of the observations used for subsampling is specified by the list 'Struc' which consists of the variable 'name' representing the substructure,
 the name 'check' of the variable with the information about the categories of the substructure, and the matrix 'labs' which specifies the values of 'check'
 corresponding to two categories in its rows, i.e. in 'labs[1,]' and 'labs[2,]'. The names of the categories have to be specified by \code{rownames(labs)}.\cr
 The number of predictors 'Pit' to be included in the model and the number of elements of the substructure 'Mit' have to be specified (lists allowed).\cr
@@ -98,12 +98,12 @@ a) just of the elements in the substructure with parameters 'M' and 'Mit',\cr
 b) just of the predictors with parameters 'N' and 'Pit',\cr
 c) of the predictors and for each subset of predictors subsampling of the elements of the substructure with parameters 'M', 'N', 'Mit', 'Pit', 'pobs', and 'ppre', and\cr
 d) of the elements of the substructure and for each of these subsets subsampling of the predictors with the same parameters as version c).\cr
-The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr\cr
+The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr
+Besides the maximal R2, the minimal MAE (Mean Absolute Error) is reported. \cr\cr
 Repeated measurements can also be handled by this function (indrep=1). They are multiple measurements of the same variable taken on the same subjects (or objects) either under different conditions 
 or over two or more time periods.\cr
-The name of the variable with the repeatedly observed subjects (or objects) has to be specified by 'name' in 'Struc'.\cr 
-Additionally, in 'check' and 'labs' in 'Struc' a binary variable has to be specified for which the same number of 
-subjects (or objects) of the two classes of this variable should be used for model building. Possible such numbers can be specified by 'Mit'.
+The variable with the repeatedly observed subjects (or objects) is assumed to be 'name' in 'Struc'.\cr
+The measure MAE is split according to the values of 'name'.
 }
 \details{
 See Buschfeld & Weihs (2025), Optimizing decision trees for the analysis of World Englishes and sociolinguistic data. Cambridge University Press, section 4.5.4, for further information.

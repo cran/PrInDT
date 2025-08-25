@@ -4,8 +4,8 @@
 \alias{SimRPrInDT}
 \title{Interdependent estimation for regression}
 \usage{
-SimRPrInDT(data,ctestv=NA,Struc,inddep,N=99,pobs=0.9,ppre=c(0.9,0.7),
-                M,nsub,conf.level=0.95,minsplit=NA,minbucket=NA)
+SimRPrInDT(data,ctestv=NA,Struc=NA,inddep,N=99,pobs=0.9,ppre=c(0.9,0.7),
+                M=1,nsub=1,conf.level=0.95,minsplit=NA,minbucket=NA)
 }
 \arguments{
 \item{data}{Input data frame with continuous target variables with column indices 'inddep' and the\cr
@@ -46,16 +46,18 @@ default = 7}
 \describe{
   \item{modelsF}{Best trees at stage 1} 
   \item{modelsI}{Best trees for the different values of 'nsub' at stage 2}
-  \item{modelsJ}{Best trees for the different values of 'nsub' after mean optimization} 
+  \item{modelsJ}{Best trees for the different values of 'nsub' after mean optimization}
+  \item{Struc}{Used structure}
+  \item{msub}{Best numbers of elements in substructure: 2nd stage, 3rd stage}
   \item{depnames}{names of dependent variables}
   \item{R2All}{R2s of best trees at stages 1, 2, mean max.}  
 }
 }
 \description{
-The function SimRPrInDT applies structured subsampling for finding an optimal subsample to model
+The function \code{\link{SimRPrInDT}} applies structured subsampling for finding an optimal subsample to model
 the relationship between the continuous variables with indices 'inddep' and all other factor and numerical variables
 in the data frame 'datain'. \cr
-The substructure of the observations used for subsampling is specified by the list 'Struc' which consists of the 'name' of the variable representing the substructure,
+The substructure of the observations used for subsampling is specified by the list 'Struc' which consists of the variable 'name' representing the substructure,
 the name 'check' of the variable with the information about the categories of the substructure, and the matrix 'labs' which specifies the values of 'check'
 corresponding to two categories in its rows, i.e. in 'labs[1,]' and 'labs[2,]'. The names of the categories have to be specified by \code{rownames(labs)}.\cr
 In structured subsampling first 'M' repetitions of subsampling of the variable 'name' with 'nsub' different elements of the substructure are realized. If 'nsub' is a list, each entry is employed individually. Then,
@@ -63,6 +65,7 @@ for each of the subsamples 'N' repetitions of subsampling of 'ppre' percentages 
 Subsampling of observations can additionally be restricted to 'pobs' percentages.\cr
 The optimization citerion is the goodness of fit R2 on the full sample. At stage 2, the models are optimized individually. 
 At stage 3, the mean of accuracies is optimized over all models.\cr
+Struc=NA causes random subsampling of observations instead of structured subsampling.\cr
 The trees generated from undersampling can be restricted by not accepting trees 
 including split results specified in the character strings of the vector 'ctestv'.\cr
 The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr

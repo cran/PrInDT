@@ -1,9 +1,9 @@
 #' Interdependent estimation for regression
 #'
-#' @description The function SimRPrInDT applies structured subsampling for finding an optimal subsample to model
+#' @description The function \code{\link{SimRPrInDT}} applies structured subsampling for finding an optimal subsample to model
 #' the relationship between the continuous variables with indices 'inddep' and all other factor and numerical variables
 #' in the data frame 'datain'. \cr
-#' The substructure of the observations used for subsampling is specified by the list 'Struc' which consists of the 'name' of the variable representing the substructure,
+#' The substructure of the observations used for subsampling is specified by the list 'Struc' which consists of the variable 'name' representing the substructure,
 #' the name 'check' of the variable with the information about the categories of the substructure, and the matrix 'labs' which specifies the values of 'check'
 #' corresponding to two categories in its rows, i.e. in 'labs[1,]' and 'labs[2,]'. The names of the categories have to be specified by \code{rownames(labs)}.\cr
 #' In structured subsampling first 'M' repetitions of subsampling of the variable 'name' with 'nsub' different elements of the substructure are realized. If 'nsub' is a list, each entry is employed individually. Then,
@@ -11,12 +11,13 @@
 #' Subsampling of observations can additionally be restricted to 'pobs' percentages.\cr
 #' The optimization citerion is the goodness of fit R2 on the full sample. At stage 2, the models are optimized individually. 
 #' At stage 3, the mean of accuracies is optimized over all models.\cr
+#' Struc=NA causes random subsampling of observations instead of structured subsampling.\cr
 #' The trees generated from undersampling can be restricted by not accepting trees 
 #' including split results specified in the character strings of the vector 'ctestv'.\cr
 #' The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr
 #'
-#' @usage SimRPrInDT(data,ctestv=NA,Struc,inddep,N=99,pobs=0.9,ppre=c(0.9,0.7),
-#'                 M,nsub,conf.level=0.95,minsplit=NA,minbucket=NA)
+#' @usage SimRPrInDT(data,ctestv=NA,Struc=NA,inddep,N=99,pobs=0.9,ppre=c(0.9,0.7),
+#'                 M=1,nsub=1,conf.level=0.95,minsplit=NA,minbucket=NA)
 #'
 #' @param data Input data frame with continuous target variables with column indices 'inddep' and the\cr
 #'    influential variables, which need to be factors or numericals (transform logicals and character variables to factors) 
@@ -45,7 +46,9 @@
 #' \describe{
 #'   \item{modelsF}{Best trees at stage 1} 
 #'   \item{modelsI}{Best trees for the different values of 'nsub' at stage 2}
-#'   \item{modelsJ}{Best trees for the different values of 'nsub' after mean optimization} 
+#'   \item{modelsJ}{Best trees for the different values of 'nsub' after mean optimization}
+#'   \item{Struc}{Used structure}
+#'   \item{msub}{Best numbers of elements in substructure: 2nd stage, 3rd stage}
 #'   \item{depnames}{names of dependent variables}
 #'   \item{R2All}{R2s of best trees at stages 1, 2, mean max.}  
 #' }
@@ -85,7 +88,7 @@
 #' outSimR
 #' plot(outSimR)
 #'
-SimRPrInDT <- function(data,ctestv=NA,Struc,inddep,N=99,pobs=0.9,ppre=c(0.9,0.7),M,nsub,conf.level=0.95,minsplit=NA,minbucket=NA){
+SimRPrInDT <- function(data,ctestv=NA,Struc=NA,inddep,N=99,pobs=0.9,ppre=c(0.9,0.7),M=1,nsub=1,conf.level=0.95,minsplit=NA,minbucket=NA){
 ## input check
 if ( typeof(data) != "list" || !(typeof(ctestv) %in% c("logical", "character"))
     || !(typeof(Struc) %in% c("logical","list")) || !all(0 < pobs & pobs <= 1) || !all(0 < ppre & ppre <= 1) 
@@ -108,10 +111,15 @@ if ( typeof(data) != "list" || !(typeof(ctestv) %in% c("logical", "character"))
 depnames <- colnames(data)[inddep]
 anz <- length(inddep)
 D <- dim(data)[2]
-name <- Struc$name
+if (any(is.na(Struc) != TRUE)){
+  name <- Struc$name
 #check <- Struc$check
-check <- eval(parse(text = Struc$check))
-labs <- Struc$labs
+  check <- eval(parse(text = Struc$check))
+  labs <- Struc$labs
+} else {
+  M <- 1
+  nsub <- 1
+}
 #message ("Simultaneous modeling")
 models <- list()
 modmax <- as.list(1:(anz*(1+length(nsub)))) 
@@ -141,15 +149,21 @@ message("\n","2nd stage: individual optimization")
 set.seed(7654321)
 k <- 1
 for (i in nsub){
-  message("Number of elements: ",i)
+  if (any(is.na(Struc) != TRUE)){
+    message("Number of elements: ",i)
+  }
   k <- k + 1
   max01[k,] <- max01[1,]
   for (n in 1:M){
-    message("repetition ",n)
-    ind1 <- sample(unique(name[check %in% labs[1,]]))[1:i] 
-    ind2 <- sample(unique(name[check %in% labs[2,]]))[1:i] 
-    datas <- data[(as.factor(name) %in% ind1) | (as.factor(name) %in% ind2) ,]
+    if (any(is.na(Struc) != TRUE)){
+      message("repetition ",n)
+      ind1 <- sample(unique(name[check %in% labs[1,]]))[1:i] 
+      ind2 <- sample(unique(name[check %in% labs[2,]]))[1:i] 
+      datas <- data[(as.factor(name) %in% ind1) | (as.factor(name) %in% ind2) ,]
 ##  datas <- cbind(dataMend[,sample(colnames(dataMend))[1:psize]],datavowel[,c(8,9,10,13)])
+    } else {
+      datas <- data
+    }
     for (j in 1:anz){
       outland <- suppressMessages(PrInDTreg(datas,depnames[j],ctestv=ctestv,N,pobs,ppre,conf.level=conf.level,minsplit=minsplit,minbucket=minbucket))
       ctpredsVL <- predict(outland$ctmax,newdata=data)
@@ -181,17 +195,23 @@ for (i in 1:anz){
 message("\n","3rd stage: joint optimization")
 k  <- 1
 for (i in nsub){
-  message("Number of elements: ",i)
+  if (any(is.na(Struc) != TRUE)){
+    message("Number of elements: ",i)
+  }
   k <- k + 1
   max01[k,] <- max01[1,]
   R21m <- sum(max01[1,1:anz]) / anz
   for (n in 1:M) {
-    message("repetition ",n)
     set.seed(4321 * n + n)
-    ind1 <- sample(unique(name[check %in% labs[1,]]))[1:i] 
-    ind2 <- sample(unique(name[check %in% labs[2,]]))[1:i] 
-    datas <- data[(as.factor(name) %in% ind1) | (as.factor(name) %in% ind2) ,]
+    if (any(is.na(Struc) != TRUE)){
+      message("repetition ",n)
+      ind1 <- sample(unique(name[check %in% labs[1,]]))[1:i] 
+      ind2 <- sample(unique(name[check %in% labs[2,]]))[1:i] 
+      datas <- data[(as.factor(name) %in% ind1) | (as.factor(name) %in% ind2) ,]
 ##  datas <- cbind(dataMend[,sample(colnames(dataMend))[1:psize]],datavowel[,c(8,9,10,13)])
+    } else {
+      datas <- data
+    }
     for (j in 1:anz){
       outland <- suppressMessages(PrInDTreg(datas,depnames[j],ctestv=ctestv,N,pobs,ppre,conf.level=conf.level,minsplit=minsplit,minbucket=minbucket))
       ctpredsVL <- predict(outland$ctmax,newdata=data)
@@ -221,7 +241,7 @@ for (i in 1:anz){
 #  plot(unlist(modmax[[k,i]]))
 #}
 R2All <- rbind(R2P,R2I,R2J)
-result <- list(modelsF=modelsP,modelsI=modelsI,modelsJ=modelsJ,msub=c(nsub[k2],nsub[k3]),depnames=depnames,R2All=R2All)
+result <- list(modelsF=modelsP,modelsI=modelsI,modelsJ=modelsJ,Struc=Struc,msub=c(nsub[k2],nsub[k3]),depnames=depnames,R2All=R2All)
 class(result) <- "SimRPrInDT"
 result
 }
@@ -229,9 +249,11 @@ result
 print.SimRPrInDT <- function(x,...){
 ## output
 #anz <- length(x$depnames)
-cat("Best numbers of elements in substructure","\n")
-cat("2nd stage: ",x$msub[1],"\n")
-cat("3rd stage: ",x$msub[2],"\n","\n")
+if (any(is.na(x$Struc) != TRUE)){
+  cat("Best numbers of elements in substructure","\n")
+  cat("2nd stage: ",x$msub[1],"\n")
+  cat("3rd stage: ",x$msub[2],"\n","\n")
+}
 cat("Accuracies of best models","\n")
 colnames(x$R2All) <- c(x$depnames,"mean")
 rownames(x$R2All) <- c("full sample","indiv. opt.","joint opt.")

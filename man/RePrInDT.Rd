@@ -57,8 +57,7 @@ default = 7}
 }
 }
 \description{
-The function \code{\link{PrInDT}} is called repeatedly according to all combinations of the percentages specified in the vectors 'plarge' and 
-'psmall'.\cr
+By the function \code{\link{RePrInDT}}, the function \code{\link{PrInDT}} is called repeatedly according to all combinations of the percentages specified in the vectors 'plarge' and 'psmall'.\cr
 The relationship between the two-class factor variable 'classname' and all other factor and numerical variables
 in the data frame 'datain' is optimally modeled by means of 'N' repetitions of undersampling.\cr 
 The optimization citerion is the balanced accuracy on the validation sample 'valdat' (default = full input sample 'datain').\cr

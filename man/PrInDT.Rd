@@ -52,7 +52,7 @@ default = 20}
 \item{minbucket}{Minimum number of elements in a node;\cr
 default = 7}
 
-\item{repvar}{Values of variable defining the substructure in the case of repeated measurements; default = NA}
+\item{repvar}{Values of variable defining the substructure in the case of repeated measurements, length = dim(valdat)[1] necessary; default = NA}
 
 \item{indrep}{Indicator of repeated measurements ('indrep=1'); default = 0}
 
@@ -101,8 +101,8 @@ in the data frame 'datain' by means of 'N' repetitions of undersampling. The opt
 on the validation sample 'valdat' (default = full input sample 'datain'). The trees generated from undersampling can be restricted by not accepting trees 
 including split results specified in the character strings of the vector 'ctestv'.\cr
 The undersampling percentages are 'percl' for the larger class and 'percs' for the smaller class (default = 1).\cr
-The probability threshold 'thres' for the prediction of the smaller class may be specified (default = 0.5).\cr
-Undersampling may be stratified in two ways by the feature 'strat'.\cr
+A probability threshold 'thres' for the prediction of the smaller class may be specified (default = 0.5).\cr
+Undersampling may be stratified in two ways by the option 'stratvers'.\cr
 The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr\cr
 In the case of repeated measurements ('indrep=1'), the values of the substructure variable have to be given in 'repvar'. 
 Only one value of 'classname' is allowed for each value of 'repvar'.

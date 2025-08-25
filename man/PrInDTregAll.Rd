@@ -38,6 +38,7 @@ Regression tree based on the full sample; interpretability is checked (see 'ctes
 The relationship between the target variable 'regname' and all other factor and numerical variables
 in the data frame 'datain' is modeled based on all observations. \cr 
 The parameters 'conf.level', 'minsplit', and 'minbucket' can be used to control the size of the trees.\cr
+Besides the maximal R2, the minimal MAE (Mean Absolute Error) is reported.
 }
 \details{
 Standard output can be produced by means of \code{print(name)} or just \code{ name } as well as \code{plot(name)} where 'name' is the output data 

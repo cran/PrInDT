@@ -26,7 +26,7 @@
 #'     default = 20
 #' @param minbucket Minimum number of elements in a node;\cr
 #'     default = 7
-#' @param repvar Values of variable defining the substructure in the case of repeated measurements; default=NA
+#' @param repvar Values of variable defining the substructure in the case of repeated measurements, length = dim(datain)[1] necessary; default=NA
 #' @param indrep Indicator of repeated measurements ('indrep=1'); default = 0
 #' @param thr threshold for element classification: minimum percentage of correct class entries; default = 0.5
 #'
@@ -111,16 +111,13 @@ PrInDTAll <- function(datain,classname,ctestv=NA,conf.level=0.95,thres=0.5,minsp
   }
   data <- data[order_class,] # data now reordered: smaller class first
   if (indrep == 1) {repv <- repv[order_class]}
+  if (indrep == 1 & length(repv) != dim(data)[1]){
+    stop("irregular input: no. of observations different in 'repvar' and validation set")
+  }
   ######
   ## model with all observations
   ######
-#if (n < 60){
-#print(n)
-#      ct <- party::ctree(class ~ ., data = data,control = party::ctree_control(mincriterion=conf.level,minsplit=5,minbucket=3))  ## TEST TEST
-#    } else {
-      ct <- party::ctree(class ~ ., data = data,control = party::ctree_control(mincriterion=conf.level,minsplit=minsplit,minbucket=minbucket)) 
-#    }
-#  ct <- party::ctree(class ~ ., data = data, control = party::ctree_control(mincriterion=conf.level))
+  ct <- party::ctree(class ~ ., data = data,control = party::ctree_control(mincriterion=conf.level,minsplit=minsplit,minbucket=minbucket)) 
   if (thres != 0.5){
     predsprob <- stats::predict(ct,type="prob")
     ctpreds <- as.factor(sapply( 1:dim(data)[1],
