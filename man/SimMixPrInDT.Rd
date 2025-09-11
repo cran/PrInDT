@@ -48,7 +48,7 @@ If no restrictions exist, the default = NA is used.}
 \description{
 The function SimMixPrInDT applies structured subsampling for finding an optimal subsample to model
 the relationship between the dependent variables specified in the sublist 'targets' of the list 'datalist' and all other factor and numerical variables
-in the corresponding data frame specified in the sublist 'datanames' of the list 'datalist' in the same order as 'targets'. \cr
+in the corresponding individual data frame specified in the sublist 'datanames' of the list 'datalist' in the same order as 'targets'. The data frames have to be different of each other! \cr
 The function is prepared to handle classification tasks with 2 or more classes and regression tasks. At first stage, the targets are estimated based on
 the full sample of all exogenous variables and on summaries of the observed endogenous variables.\cr
 For generating summaries, the variables representing the substructure have to be specified in the sublist 'datastruc' of 'datalist'.\cr
@@ -60,7 +60,7 @@ The substructure of the observations used for structured subsampling is specifie
 the name 'check' of the variable with the information about the categories of the substructure (without specification of the dataset names already specified 
 in 'datanames', see example below), and the matrix 'labs' which specifies the values of 'check' corresponding to two categories in its rows, i.e. in 'labs[1,]' and 'labs[2,]'. 
 The names of the categories have to be specified by  \code{rownames(labs)}.\cr
-In structured subsampling first 'M' repetitions of subsampling of the variable 'name' with 'nsub' different elements of the substructure  are realized. If 'nsub' is a list, each entry is employed individually. Then,
+In structured subsampling, first 'M' repetitions of subsampling of the variable 'name' with 'nsub' different elements of each category in 'check' are realized. If 'nsub' is a list, each entry is employed individually. If 'nsub' is larger than the maximum available number of elements with a certain value of 'check', the maximum possible number of elements is used. Then,
 for each of the subsamples 'N' repetitions of subsampling in classification or regression with the specified percentages of classes, observations, and predictors are carried out.\cr 
 These percentages are specified in the matrix 'percent', one row per estimation task. For binary classification tasks, 
 percentages 'percl' and 'percs' for the larger and the smaller class have to be specified. For multilevel classification tasks, NA is specified (see the below example) 

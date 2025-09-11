@@ -2,7 +2,7 @@
 #'
 #' @description The function SimMixPrInDT applies structured subsampling for finding an optimal subsample to model
 #' the relationship between the dependent variables specified in the sublist 'targets' of the list 'datalist' and all other factor and numerical variables
-#' in the corresponding data frame specified in the sublist 'datanames' of the list 'datalist' in the same order as 'targets'. \cr
+#' in the corresponding individual data frame specified in the sublist 'datanames' of the list 'datalist' in the same order as 'targets'. The data frames have to be different of each other! \cr
 #' The function is prepared to handle classification tasks with 2 or more classes and regression tasks. At first stage, the targets are estimated based on
 #' the full sample of all exogenous variables and on summaries of the observed endogenous variables.\cr
 #' For generating summaries, the variables representing the substructure have to be specified in the sublist 'datastruc' of 'datalist'.\cr
@@ -14,7 +14,7 @@
 #' the name 'check' of the variable with the information about the categories of the substructure (without specification of the dataset names already specified 
 #' in 'datanames', see example below), and the matrix 'labs' which specifies the values of 'check' corresponding to two categories in its rows, i.e. in 'labs[1,]' and 'labs[2,]'. 
 #' The names of the categories have to be specified by  \code{rownames(labs)}.\cr
-#' In structured subsampling first 'M' repetitions of subsampling of the variable 'name' with 'nsub' different elements of the substructure  are realized. If 'nsub' is a list, each entry is employed individually. Then,
+#' In structured subsampling, first 'M' repetitions of subsampling of the variable 'name' with 'nsub' different elements of each category in 'check' are realized. If 'nsub' is a list, each entry is employed individually. If 'nsub' is larger than the maximum available number of elements with a certain value of 'check', the maximum possible number of elements is used. Then,
 #' for each of the subsamples 'N' repetitions of subsampling in classification or regression with the specified percentages of classes, observations, and predictors are carried out.\cr 
 #' These percentages are specified in the matrix 'percent', one row per estimation task. For binary classification tasks, 
 #' percentages 'percl' and 'percs' for the larger and the smaller class have to be specified. For multilevel classification tasks, NA is specified (see the below example) 
@@ -169,13 +169,17 @@ ninter <- as.factor(ninter)
 models <- list()
 modmax <- list()
   for (K in 1:anz){
-    data <- as.data.frame(eval(parse(text = datat[K])))    
+    data <- as.data.frame(eval(parse(text = datat[K])))   
     dataname <- datat[K]
     target <- datalist$targets[K]
     if (length(levels(data[,target])) == 2){
       nmod[K] <- 1
       nlev <- c(nlev,"class")
       sub <- unlist(datalist$datastruc[K])
+      if (is.factor(sub) != TRUE){
+        cat("\n Error: 'datastruc' has to contain factor variables only\n")
+        return()
+      }
       sub <- droplevels(sub)
       s <- unlist(str_split(summ[K],","))
       si <- which(levels(data[,target])==s)
@@ -191,6 +195,10 @@ modmax <- list()
       nmod[K] <- length(levels(data[,target]))
       nlev <- c(nlev,levels(data[,target]))
       sub <- unlist(datalist$datastruc[K])
+      if (is.factor(sub) != TRUE){
+        cat("\n Error: 'datastruc' has to contain factor variables only\n")
+        return()
+      }
       sub <- droplevels(sub)
       s <- unlist(str_split(summ[K],","))
       si <- which(levels(data[,target]) %in% s)
@@ -211,6 +219,10 @@ modmax <- list()
       nmod[K] <- 1
       nlev <- c(nlev,"real")
       sub <- unlist(datalist$datastruc[K])
+      if (is.factor(sub) != TRUE){
+        cat("\n Error: 'datastruc' has to contain factor variables only\n")
+        return()
+      }
       sc <- as.character(sub)
       v1 <- aggregate(data[,target] ~ sc,data=cbind(sc,data[,target]),FUN="mean")
       ind <- v1[,2]
@@ -219,11 +231,11 @@ modmax <- list()
 #      print(length(inds[[K]]))
       extdata[[K]] <- paste0(dataname,"i")
     }
-}
-for (K in 1:anz){
-  datai <- as.data.frame(eval(parse(text = datat[K])))    
-  mv("datai",extdata[[K]])
-}
+  }
+  for (K in 1:anz){
+    datai <- as.data.frame(eval(parse(text = datat[K])))    
+    mv("datai",extdata[[K]])
+  }
 ## name definitions
 for (K in 1:anz){
   datai <- eval(parse(text = extdata[K]))
@@ -235,10 +247,10 @@ for (K in 1:anz){
       for (j in 1:length(ind)) {
         datai$indi[unlist(datalist$datastruc[K]) == names(ind)[j]] <- ind[j]
       }
-   names(datai)[(D+1)] <- paste0("p",datalist$targets[i])
-   }
- }
-mv("datai",extdata[[K]])
+    names(datai)[(D+1)] <- paste0("p",datalist$targets[i])
+    }
+  }
+  mv("datai",extdata[[K]])
 #print(str(eval(parse(text = extdata[K]))))
 }
   modelsP <- list()
@@ -246,6 +258,11 @@ mv("datai",extdata[[K]])
 ## first stage
   for (K in 1:anz){
     data <- eval(parse(text = extdata[K]))
+    l <- colnames(data)
+    if (length(unique(l)) != length(l)){
+      cat("\n Error: Duplicated variable name generated: Make sure that the data frames in 'datanames' are different!\n")
+      return()
+    }
     dataname <- datat[K]
     target <- datalist$targets[K]
 #print(levels(as.factor(data[,target])))
@@ -290,6 +307,7 @@ modelsF <- modelsP
 ####################
 ## 2nd stage
 ssize <- nsub
+modmax <- modelsP
 #set.seed(7654321)
  acc <- c(1:anz)*0
  NM <- N  ## NEW version
@@ -307,6 +325,15 @@ for (i in ssize){
 message(dataname,": 2nd stage")
       set.seed(54321*n + K*n)                                        
       datai <- eval(parse(text = extdata[K]))
+      if (!(check %in% colnames(datai))){
+        cat("\n Error: 'check' is not in data set\n")
+        return()
+      }
+      z <- datai[,check]
+      if (is.factor(z) != TRUE){
+        cat("\n Error: 'check' has to be factor variable\n")
+        return()
+      }
       sub <- unlist(datalist$datastruc[K])
       sub <- droplevels(sub)
       target <- datalist$targets[K]

@@ -6,12 +6,13 @@
 #' The optimization citerion is the balanced accuracy on the validation sample 'valdat' (default is the full input sample 'datain'). 
 #' Other criteria are possible (cf. parameter description of 'crit'). The trees generated from undersampling can be restricted by not accepting trees 
 #' including split results specified in the character strings of the vector 'ctestv'.\cr
-#' The substructure of the observations used for subsampling in modelling is specified by the list 'Struc' which consists of the variable 'name' representing the substructure,
-#' the name 'check' of the variable with the information about the categories of the substructure, and the matrix 'labs' which specifies the values of 'check'
+#' The substructure of the observations used for subsampling in modelling is specified by the list 'Struc' which consists of the factor variable 'name' representing the substructure,
+#' the name 'check' of the factor variable with the information about the categories of the substructure, and the matrix 'labs' which specifies the values of 'check'
 #' corresponding to two categories in its rows, i.e. in 'labs[1,]' and 'labs[2,]'. The names of the categories have to be specified by \code{rownames(labs)}.\cr
 #' See parameter description of 'Struc' for its specification for 'vers="b"' and 'indrep > 0'.\cr
 #' The number of predictors 'Pit' to be included in the model and the number of elements of the substructure 'Eit' have to be specified (lists allowed), and 
 #' undersampling of the categories of 'classname' can be controlled by 'undersamp=TRUE/FALSE'.\cr
+#' In structured subsampling, 'N' repetitions of subsampling of the variable 'name' with 'Eit' different elements of each category in 'check' are realized. If 'Eit' is a list, each entry is employed individually. If 'Eit' is larger than the maximum available number of elements with a certain value of 'check', the maximum possible number of elements is used.\cr
 #' Four different versions of structured subsampling exist: \cr
 #' a) just of the elements in the substructure (possibly with additional undersampling) with parameters 'N' and 'Eit',\cr
 #' b) just of the predictors with parameters 'Ni' and 'Pit', \cr
@@ -164,20 +165,29 @@ if ( typeof(datain) != "list" || typeof(classname) != "character" || !(typeof(ct
   if ((is.na(minsplit) == TRUE) & !(is.na(minbucket) == TRUE)){
     minsplit <- minbucket * 3
   }
-if (indrep == 1 & crit != "ba"){
+if (indrep > 0 & crit != "ba"){
   stop("irregular input: repeated measurements only implemented for ('crit = ba')")
 }
 if (indrep == 0 & vers != "b"){
   check <- eval(parse(text = Struc$check))
   if (length(check) == 0){
-    stop("irregular input: check variable not in data set")
+    cat("\n irregular input: check variable not in data set\n")
+    return()
+  }
+  if (is.factor(check) != TRUE){
+    cat("\n Error: 'Struc$check' has to be a factor variable\n")
+    return()
   }
 }
 #
 ## re-naming
 dataname <- as.character(substitute(datain))
-data <- datain
+data <- datain  
 name <- Struc$name
+if (is.factor(name) != TRUE){
+  cat("\n Error: 'Struc$name' has to be a factor variable\n")
+  return()
+}
 names(data)[names(data)==classname] <- "class"
 names(valdat)[names(valdat)==classname] <- "class"
 if (indrep > 0 & all(is.na(repvar)) == TRUE & identical(data,valdat)) {

@@ -6,9 +6,10 @@
 #' The optimization citerion is the goodness of fit R2 on the validation sample 'valdat' (default = 'datain').  
 #' The trees generated from undersampling can be restricted by not accepting trees 
 #' including split results specified in the character strings of the vector 'ctestv'.\cr
-#' The substructure of the observations used for subsampling is specified by the list 'Struc' which consists of the variable 'name' representing the substructure,
-#' the name 'check' of the variable with the information about the categories of the substructure, and the matrix 'labs' which specifies the values of 'check'
+#' The substructure of the observations used for subsampling is specified by the list 'Struc' which consists of the factor variable 'name' representing the substructure,
+#' the name 'check' of the factor variable with the information about the categories of the substructure, and the matrix 'labs' which specifies the values of 'check'
 #' corresponding to two categories in its rows, i.e. in 'labs[1,]' and 'labs[2,]'. The names of the categories have to be specified by \code{rownames(labs)}.\cr
+#' In structured subsampling, 'M' repetitions of subsampling of the variable 'name' with 'Mit' different elements of each category in 'check' are realized. If 'Mit' is a list, each entry is employed individually. If 'Mit' is larger than the maximum available number of elements with a certain value of 'check', the maximum possible number of elements is used.\cr
 #' The number of predictors 'Pit' to be included in the model and the number of elements of the substructure 'Mit' have to be specified (lists allowed).\cr
 #' The percentages of involved observations and predictors can be controlled by the parameters 'pobs' and 'ppre', respectively.\cr
 #' The parameter 'Struc' is needed for all versions of subsampling except "b". Four different versions of structured subsampling exist:\cr 
@@ -138,13 +139,21 @@ if ( typeof(datain) != "list" || typeof(regname) != "character" || !(typeof(ctes
     minsplit <- minbucket * 3
   }
 data <- datain
-if ((vers == "a") | (vers == "c") | (vers == "d")){ 
+if ((vers == "a") | (vers == "c") | (vers == "d")){
   name <- Struc$name
-#  check <- Struc$check
-# print(names(data))
+  if (is.factor(name) != TRUE){
+    cat("\n Error: 'Struc$name' has to be a factor variable\n")
+    return()
+  }
+#check <- Struc$check
   check <- eval(parse(text = Struc$check))
+  if (is.factor(check) != TRUE){
+    cat("\n Error: 'Struc$check' has to be a factor variable\n")
+    return()
+  }
   if (length(check) == 0){
-    stop("irregular input: check variable not in data set")
+    cat("\n irregular input: check variable not in data set\n")
+    return()
   }
   labs <- Struc$labs
   if (all(is.na(Mit)) == TRUE){stop("No number of elements in substructure specified")}

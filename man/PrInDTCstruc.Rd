@@ -111,12 +111,13 @@ in the data frame 'datain' by means of 'N' repetitions of subsampling from a sub
 The optimization citerion is the balanced accuracy on the validation sample 'valdat' (default is the full input sample 'datain'). 
 Other criteria are possible (cf. parameter description of 'crit'). The trees generated from undersampling can be restricted by not accepting trees 
 including split results specified in the character strings of the vector 'ctestv'.\cr
-The substructure of the observations used for subsampling in modelling is specified by the list 'Struc' which consists of the variable 'name' representing the substructure,
-the name 'check' of the variable with the information about the categories of the substructure, and the matrix 'labs' which specifies the values of 'check'
+The substructure of the observations used for subsampling in modelling is specified by the list 'Struc' which consists of the factor variable 'name' representing the substructure,
+the name 'check' of the factor variable with the information about the categories of the substructure, and the matrix 'labs' which specifies the values of 'check'
 corresponding to two categories in its rows, i.e. in 'labs[1,]' and 'labs[2,]'. The names of the categories have to be specified by \code{rownames(labs)}.\cr
 See parameter description of 'Struc' for its specification for 'vers="b"' and 'indrep > 0'.\cr
 The number of predictors 'Pit' to be included in the model and the number of elements of the substructure 'Eit' have to be specified (lists allowed), and 
 undersampling of the categories of 'classname' can be controlled by 'undersamp=TRUE/FALSE'.\cr
+In structured subsampling, 'N' repetitions of subsampling of the variable 'name' with 'Eit' different elements of each category in 'check' are realized. If 'Eit' is a list, each entry is employed individually. If 'Eit' is larger than the maximum available number of elements with a certain value of 'check', the maximum possible number of elements is used.\cr
 Four different versions of structured subsampling exist: \cr
 a) just of the elements in the substructure (possibly with additional undersampling) with parameters 'N' and 'Eit',\cr
 b) just of the predictors with parameters 'Ni' and 'Pit', \cr

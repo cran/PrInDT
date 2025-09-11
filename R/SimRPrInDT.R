@@ -3,10 +3,10 @@
 #' @description The function \code{\link{SimRPrInDT}} applies structured subsampling for finding an optimal subsample to model
 #' the relationship between the continuous variables with indices 'inddep' and all other factor and numerical variables
 #' in the data frame 'datain'. \cr
-#' The substructure of the observations used for subsampling is specified by the list 'Struc' which consists of the variable 'name' representing the substructure,
-#' the name 'check' of the variable with the information about the categories of the substructure, and the matrix 'labs' which specifies the values of 'check'
+#' The substructure of the observations used for subsampling is specified by the list 'Struc' which consists of the factor variable 'name' representing the substructure,
+#' the name 'check' of the factor variable with the information about the categories of the substructure, and the matrix 'labs' which specifies the values of 'check'
 #' corresponding to two categories in its rows, i.e. in 'labs[1,]' and 'labs[2,]'. The names of the categories have to be specified by \code{rownames(labs)}.\cr
-#' In structured subsampling first 'M' repetitions of subsampling of the variable 'name' with 'nsub' different elements of the substructure are realized. If 'nsub' is a list, each entry is employed individually. Then,
+#' In structured subsampling, first 'M' repetitions of subsampling of the variable 'name' with 'nsub' different elements of each category in 'check' are realized. If 'nsub' is a list, each entry is employed individually. If 'nsub' is larger than the maximum available number of elements with a certain value of 'check', the maximum possible number of elements is used. Then,
 #' for each of the subsamples 'N' repetitions of subsampling of 'ppre' percentages of the predictors are carried out.\cr 
 #' Subsampling of observations can additionally be restricted to 'pobs' percentages.\cr
 #' The optimization citerion is the goodness of fit R2 on the full sample. At stage 2, the models are optimized individually. 
@@ -113,8 +113,20 @@ anz <- length(inddep)
 D <- dim(data)[2]
 if (any(is.na(Struc) != TRUE)){
   name <- Struc$name
+  if (is.factor(name) != TRUE){
+    cat("\n Error: 'Struc$name' has to be a factor variable\n")
+    return()
+  }
 #check <- Struc$check
   check <- eval(parse(text = Struc$check))
+  if (length(check) == 0){
+    cat("\n irregular input: check variable not in data set\n")
+    return()
+  }
+  if (is.factor(check) != TRUE){
+    cat("\n Error: 'Struc$check' has to be a factor variable\n")
+    return()
+  }
   labs <- Struc$labs
 } else {
   M <- 1
